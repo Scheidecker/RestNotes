@@ -1,4 +1,4 @@
-# CURL guide — identity, teams, notebooks, sharing and note CRUD
+# CURL guide — identity, teams, notebooks, notes, tags and locking
 Author: Carlos Scheidecker
 
 Start the API using the [quick start](Quick_start.md). Examples below use Bash, curl and Python 3. Use HTTPS outside localhost, do not enable shell tracing (`set -x`), and never print tokens. Set the base URL once:
@@ -6,6 +6,9 @@ Start the API using the [quick start](Quick_start.md). Examples below use Bash, 
 ```bash
 export RN_BASE_URL='http://localhost:8081'
 ```
+Run the sections in order: onboarding → teams → notebooks/sharing → note CRUD → tags → locking. Archived examples are replaced with fresh fixtures before later sections. Cleanup is after locking, not after notebook sharing. Use a newly registered user or Engineering admin as the owner for the hard-coded Marketing sharing examples; if you logged in as Marketing, switch to a distinct owner before continuing.
+
+Note CRUD/tag examples initially assume no active lease. If another client has already locked a note, follow [note locking](#note-locking) rather than retrying tokenless writes. Do not capture terminal sessions containing private note responses, enable curl verbose/trace output, or save bearer/lock tokens in `.env` or source files.
 
 ## Register, login and read your profile
 ### 1. Register an account — POST /api/v1/auth/register
@@ -193,7 +196,7 @@ Expected: 204. Repeating removal of an absent membership returns 204 while the c
 
 Team changes and their activity metadata commit together. Role writes are serialized, without ETag/If-Match requirements. No team rename/delete, standalone member-detail GET, invitations or activity-feed HTTP operations are promised by this increment.
 
-Keep RN_TOKEN and RN_TEAM_ID for the notebook walkthrough below; cleanup commands are at its end.
+Keep RN_TOKEN and RN_TEAM_ID for the notebook walkthrough below; cleanup commands are after the locking walkthrough.
 
 ## Notebooks and cross-team sharing
 Continue as the ADMIN of the team created above. Every notebook collection uses page/size (defaults 0/20, maximum 100). Notebook mutation requires your own current strong ETag; missing If-Match is 428, stale is 412, and weak/wildcard/multiple or malformed tags are 400.
@@ -492,7 +495,7 @@ printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
   curl --include --header @- "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
 ```
 
-Expected: 204 with a new archive ETag, then 404. Content/tag/history rows remain; archive adds activity, not a duplicate unchanged content snapshot. Repeating archive with its returned current tag is 204 while the notebook is active and the caller remains an editor; an old tag is 412. Do not refresh_note_etag after archive because ordinary detail is hidden. No unarchive or hard-delete endpoint exists.
+Expected: 204 with a new archive ETag, then 404. Content/tag/history rows remain; archive adds activity, not a duplicate unchanged content snapshot. Repeating archive with its returned current tag and no retired lock token is 204 while the notebook is active and the caller remains an editor; an old ETag is 412. If the note was leased, successful archive removes that lease: discard its token rather than sending it on a repeat request (409). Do not refresh_note_etag after archive because ordinary detail is hidden. No unarchive or hard-delete endpoint exists.
 
 Oversized Markdown or note JSON returns 413. The JSON body cap is 2 MiB, including chunked requests; the content cap is 256 KiB in UTF-8 bytes, not characters. Unknown fields and incomplete/invalid DTOs return sanitized 400 responses without echoing Markdown.
 
@@ -600,16 +603,23 @@ Expected: 200 with locked false and null ownerId/acquiredAt/expiresAt initially,
 Capture the secret without displaying the acquisition response:
 
 ```bash
-RN_LOCK_TOKEN=$(
+if RN_ACQUIRED_LOCK_TOKEN=$(
   curl --silent --show-error --fail \
     --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
     --request POST "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock" |
     python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])'
-)
-export RN_LOCK_TOKEN
+); then
+  RN_LOCK_TOKEN=$RN_ACQUIRED_LOCK_TOKEN
+  export RN_LOCK_TOKEN
+else
+  printf 'Acquisition was not confirmed; inspect status before continuing.\n' >&2
+fi
+unset RN_ACQUIRED_LOCK_TOKEN
 ```
 
 Expected: 200 with ownerId/acquiredAt/expiresAt/token, and the unchanged note ETag. Only current EDITOR-or-higher users may acquire/renew/release. POST has no body; the actor comes from authentication, not client IDs. The server stores only a digest. Never print, log or commit RN_LOCK_TOKEN or put it in command-line literals.
+
+A timeout, disconnected terminal or failed parsing can lose the response even after acquisition committed. GET status never returns the token; if it was not captured, wait for the lease to expire before acquiring again. Do not automatically retry acquisition as if it were idempotent, and do not replace a retained valid token with an empty failed capture. The duration is fixed at 300 seconds; no lease-TTL environment variable exists.
 
 Until release/expiry, all note PUT/PATCH/archive and tag add/remove requests require both the authenticated holder and Note-Lock-Token, including no-op writes. Even a second client logged in as the same user cannot reacquire without the token:
 
@@ -645,19 +655,22 @@ Expected: 200 for edit and renewal. The real content/pinning edit advances the n
 ### 4. Release — DELETE /api/v1/notes/{id}/lock
 
 ```bash
-curl --fail-with-body --include --request DELETE \
+if curl --fail-with-body --include --request DELETE \
   --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\nNote-Lock-Token: %s\n' \
     "$RN_TOKEN" "$RN_NOTE_ETAG" "$RN_LOCK_TOKEN") \
-  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock"
-unset RN_LOCK_TOKEN
-curl --fail-with-body --include --request DELETE \
-  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
-  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock"
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock"; then
+  unset RN_LOCK_TOKEN
+  curl --fail-with-body --include --request DELETE \
+    --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+    "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock"
+fi
 ```
 
 Expected: 204 for release, then tokenless no-op 204 while unlocked, with unchanged note ETag. Repeating with the old supplied token instead returns 409 STALE_LOCK_TOKEN. Unlocked notes need only current If-Match as before.
 
-Expiry is exclusive: expiresAt equal to database now is expired. After five minutes without renewal, GET reports unlocked and an editor can POST with current If-Match and no old token to acquire a fresh generation. Old supplied tokens receive 409 on writes/renewal/release and cannot release a replacement. Malformed/blank/multiple tokens are 400 INVALID_LOCK_TOKEN; missing/stale/invalid If-Match remain 428/412/400. Current access checks still run first.
+Expiry is exclusive: expiresAt equal to database now is expired. After five minutes without renewal, GET reports unlocked and an editor can POST with current If-Match and no old token to acquire a fresh generation. A supplied token when no active lease exists returns 409 STALE_LOCK_TOKEN; for an active replacement, its holder's old token also returns 409, while a different actor receives 423 NOTE_LOCKED. Old tokens cannot release replacements. Malformed/blank/multiple tokens are 400 INVALID_LOCK_TOKEN; missing/stale/invalid If-Match remain 428/412/400. Current access checks still run first.
+
+For recovery: 401 means re-login (retain a still-valid separate lock token); 412 means re-fetch the caller's note ETag and reconcile changes; 423 means use the holder's token or wait; 409 STALE_LOCK_TOKEN means inspect status and explicitly resolve the expired/replaced lease. Do not silently strip a rejected token and replay a write, since that changes the operation's locking intent. Reads remain available to current readers throughout a lease.
 
 Revoked/downgraded holders cannot write, renew or release; remaining editors may wait up to five minutes for expiry. No scheduler, in-memory mutex, admin override or real-time presence feed is involved. Leases survive API restart in MySQL, but dev ephemeral JWTs require re-login. Holder note archive removes the lease transactionally; notebook archive hides all note/lock routes.
 
@@ -669,6 +682,7 @@ unset RN_NOTEBOOK_ID RN_NOTEBOOK_ETAG RN_STALE_NOTEBOOK_ETAG RN_SHARE_TEAM_ID
 unset RN_NOTE_ID RN_NOTE_ETAG RN_STALE_NOTE_ETAG RN_RECIPIENT_NOTE_ETAG
 unset RN_TAG_NAME RN_TAG_SEGMENT
 unset RN_LOCK_TOKEN
+unset RN_PASSWORD RN_SHARE_PASSWORD RN_BASE_URL RN_ACQUIRED_LOCK_TOKEN
 unset -f refresh_notebook_etag refresh_note_etag
 ```
 

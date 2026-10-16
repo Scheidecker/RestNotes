@@ -8,6 +8,18 @@ Java 25, Maven Wrapper 3.9.16, Spring Boot 4.1.1, Springdoc 3.1.1, Spring MVC, V
 
 Persistence uses Data JPA, MySQL 8.4.11, Liquibase Community 5.0.4 and Testcontainers 2.0.5. The Liquibase override of Boot's 5.0.3 has passed real-MySQL tests. Spring Security's supported RSA JWT encoder/decoder and password authentication provider implement identity without a separate authentication service.
 
+## Project structure
+One application/module/database, organized by feature under `src/main/java/com/scheideckerantunes/notes/`:
+- `auth/`, `user/`, `team/`: authentication/profiles, team membership and role enforcement.
+- `notebook/`, `note/`: notebook sharing, note CRUD/pinning/tags, ETags and optional editing leases.
+- `history/`, `activity/`, `comment/`: persistence foundations; snapshots/activity are recorded internally, but collaboration/history/search/activity REST remains deferred.
+- `common/`, `config/`: shared entities, pagination, errors, security and application configuration.
+- `src/main/resources/`: YAML configuration and Liquibase changelogs; migration 005 adds note_locks.
+- `src/test/java/` and `src/test/resources/`: unit/integration tests and legacy migration fixtures.
+- `docs/`: current design, schema, quick start, CURL walkthrough and phase roadmap.
+
+The locking code lives in `note/`: LockedNotes shares authorization/ETag locking, NoteLockService handles lifecycle, NoteLocks enforces holder credentials, NoteLockStore joins JDBC lease writes to JPA transactions, and NoteLockTokens handles generation/verification. Controllers expose DTOs rather than persistence entities.
+
 ## Run locally
 Prerequisites: JDK 25 and unzip (or Expand-Archive on Windows); first build requires network access to Maven Central. The wrapper pins the Maven ZIP SHA-256, so unzip is required on Unix.
 
@@ -90,9 +102,11 @@ Note locking endpoints:
 - `POST /api/v1/notes/{id}/lock`: current editors acquire a five-minute lease with note If-Match; supplying the holder's Note-Lock-Token renews it.
 - `DELETE /api/v1/notes/{id}/lock`: current editors release with note If-Match and the holder's token; unlocked tokenless release is an idempotent 204.
 
-Locks are optional: unlocked notes retain ordinary ETag-based writes. While locked, all note PUT/PATCH/archive and tag mutations require the authenticated holder's Note-Lock-Token, including no-ops. Another client of the same user also needs the token. Conflicts return 423 NOTE_LOCKED; stale/expired supplied tokens return 409 STALE_LOCK_TOKEN rather than becoming unlocked writes; malformed tokens return 400. ETags remain mandatory.
+Locks are optional: unlocked notes retain ordinary ETag-based writes. While locked, all note PUT/PATCH/archive and tag mutations require the authenticated holder's Note-Lock-Token, including no-ops. Another client of the same user also needs the token. A different actor or missing holder token returns 423 NOTE_LOCKED. For the holder, a mismatched token returns 409 STALE_LOCK_TOKEN; any supplied token when no active lease exists also returns 409 rather than becoming an unlocked write. Malformed tokens return 400. Current access and ETag checks take precedence.
 
 Acquisition returns 200, unchanged note ETag, ownerId/acquiredAt/expiresAt and a secret token; renewal returns metadata without reissuing it. Capture the token without printing it. Lease responses use no-store; only digests are persisted. Expiry is decided by database UTC time under ordered team/notebook/note locks, so takeover works across replicas without a timer. Losing access immediately prevents renewal/writes; others may wait up to five minutes for expiry. No force-unlock/admin bypass exists. Lease changes do not create content history/activity or update note attribution/version. Holder archive removes its lease; notebook archive hides all note/lease routes. See the [locking walkthrough](docs/CURL_Guide.md#note-locking).
+
+Lease duration is fixed at 300 seconds; no environment variable currently configures it. Reads remain available to authorized readers. If the initial acquisition response/token is lost, GET status cannot recover it: wait for expiry before acquiring a new generation. A timeout is not proof that acquisition failed. API restart preserves leases until expiry; if dev's ephemeral JWT keys change, re-login while retaining the separate lease token.
 
 ## Configuration
 All Spring configuration is in `src/main/resources/application.yml`.
@@ -107,6 +121,8 @@ Additional persistence settings:
 - DB_POOL_SIZE / DB_CONNECTION_TIMEOUT_MS: 10 / 10000.
 - DEMO_DATA_ENABLED: false by default; local Compose explicitly defaults it to true.
 - MIGRATIONS_ENABLED: true in dev/test; false in UAT/prod. Use a schema-only deployment migration identity before starting protected environments.
+
+These settings describe the application. The base Compose file explicitly sets the internal DB URL and container port and forwards only its listed environment entries. DB_POOL_SIZE, DB_CONNECTION_TIMEOUT_MS, MIGRATIONS_ENABLED and OPENAPI_ENABLED are not forwarded there; changing them for Compose requires an explicit service-environment override, not merely adding them to `.env`. Compose does not automatically inject every `.env` variable into containers.
 
 The API refuses root connections in all profiles, and UAT/prod reject missing/blank/known demo credentials and demo seeding before datasource initialization.
 
@@ -133,6 +149,8 @@ Never store real secrets in Git, logs, images or command-line literals. `.env.ex
 
 Tests cover identity/team authorization, notebooks/sharing, note CRUD/tags/leases, byte/body limits, null/omission behavior, snapshots, canonical catalog reuse, tag capacity, no-ops, lease expiry/token fencing, concurrent acquisition/edits/revocations/downgrades and transactional rollback, plus prior migration/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
 
+Locking-increment validation on 2026-10-16: clean Maven verification passed 184 tests (52 unit, 132 integration), with no failures/errors/skips and zero Checkstyle violations. Docker build and Compose syntax validation passed. An isolated 77-request curl workflow verified lease restart persistence, HTTP acquisition races and database history/activity counts; its temporary resources were removed. This records that verification baseline, not a replacement for rerunning checks after subsequent code changes.
+
 ## Required demo data — Phase 2
 Liquibase pre-populates exactly two isolated teams when demo mode is explicitly enabled:
 - Engineering: `engineering.admin@scheideckerantunes.com`, ADMIN, one notebook and one note authored by this admin.
@@ -152,8 +170,8 @@ Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deploymen
 ## Review gates
 1. Foundation — completed.
 2. Persistence, Liquibase and demo fixtures — completed.
-3. Identity, teams and role enforcement — completed in this increment.
-4. Notebook/sharing and note CRUD/pinning/tags/snapshots/editing leases — implemented; awaiting review/manual commit.
-5. Comments, history restore, search and activity.
-6. Release validation and complete deployment/usage manuals.
+3. Identity, teams and role enforcement — completed.
+4. Notebook/sharing and note CRUD/pinning/tags/snapshots/editing leases — implemented and validated.
+5. Comments, history restore, search and activity — not implemented; separate authorization required.
+6. Release readiness and complete deployment/usage manuals — remaining deliverables; feature-level validation already runs in each increment.
 
