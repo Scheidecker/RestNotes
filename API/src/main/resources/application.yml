@@ -64,7 +64,7 @@ springdoc:
 spring:
   config:
     activate:
-      on-profile: "dev | test"
+      on-profile: "(dev | test) & !uat & !prod"
 springdoc:
   api-docs:
     enabled: "${OPENAPI_ENABLED:true}"

@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("prod")
+@ActiveProfiles({"dev", "prod"})
 class ProductionSurfaceTest {
 
     @Autowired
