@@ -22,7 +22,7 @@ public class NoteRequestBodyAdvice extends RequestBodyAdviceAdapter {
     public boolean supports(MethodParameter parameter, Type targetType,
             Class<? extends HttpMessageConverter<?>> converterType) {
         return targetType == CreateNoteRequest.class || targetType == ReplaceNoteRequest.class
-                || targetType == PatchNoteRequest.class;
+                || targetType == PatchNoteRequest.class || targetType == AddTagRequest.class;
     }
 
     @Override

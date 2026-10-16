@@ -84,6 +84,11 @@ public class Note extends VersionedEntity {
         return true;
     }
 
+    public void tagsChanged(UUID editorId) {
+        updatedBy = Objects.requireNonNull(editorId);
+        markUpdated();
+    }
+
     public boolean archive(Instant at, UUID editorId) {
         if (archivedAt != null) {
             return false;

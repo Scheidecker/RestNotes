@@ -32,7 +32,9 @@ Notebook shares are team-level VIEWER/EDITOR only with restrictive foreign keys 
 
 Composite foreign keys enforce notebook/note ownership and same-team note/tag links. Deletion is restricted; notebooks and notes archive without cascading away history. Hibernate validates schema and never creates/updates it.
 
-Note CRUD needs no schema migration. Initial snapshots use version_number 1; real title/content/pinning changes allocate max(version_number)+1 under the note row lock, not from the JPA version. No-op/failed writes add nothing. Archive changes the row version and activity but does not duplicate a content snapshot. Existing tag associations/names are preserved and bounded to 20 in responses/snapshots.
+Note CRUD/tag management needs no schema migration. Initial snapshots use version_number 1; real title/content/pinning or tag association changes allocate max(version_number)+1 under the note row lock, not from the JPA version. No-op/failed writes add nothing. Archive changes the row version and activity but does not duplicate a content snapshot. Tag names are bounded to 20 in responses/snapshots.
+
+Tag mutation locks owning/access-path teams, notebook and note, checks current role/If-Match, and updates links, note attribution/version, snapshots and NOTE_TAGGED/NOTE_UNTAGGED activity transactionally. Catalog scope always comes from the note's owning team, including for shared editors. Names are stripped/lowercased and validated after normalization (1–50 UTF-16 units, safe encoded path segments). The existing utf8mb4_0900_ai_ci uniqueness also equates case/accent aliases; catalog lookups reuse the stored canonical name. A new 21st association fails before inserting a catalog row. Duplicate adds/absent removals are no-ops with a current validator. Removing associations retains catalog entries; PUT/PATCH preserve links. These application-enforced limits must also be respected by operator SQL.
 
 Indexes support user-to-team membership, notebook/team discovery, note lists, comments by time, history versions and activity by time. FULLTEXT covers note title/content. MySQL token length, stopwords and collation affect matching; this is not arbitrary substring search. Team-aware search is implemented later.
 
@@ -43,7 +45,7 @@ The dataset has exactly two teams/admin users/memberships/notebooks/notes, and o
 - Marketing admin: `marketing.admin@scheideckerantunes.com`.
 - Demo initial password: `RestNotesDemo#8`.
 
-The password above is a public, local-demo value, stored only as BCrypt hashes in seed SQL. Never reuse these accounts or passwords in shared/cloud environments. Login, team/notebook administration and note CRUD are available. Do not confuse application identities with the APIUser database account.
+The password above is a public, local-demo value, stored only as BCrypt hashes in seed SQL. Never reuse these accounts or passwords in shared/cloud environments. Login, team/notebook administration and note CRUD/tag management are available. Do not confuse application identities with the APIUser database account.
 
 Deterministic UUID convention: final digit 1 is Engineering, 2 is Marketing:
 - Users: `10000000-0000-4000-8000-000000000001` and `10000000-0000-4000-8000-000000000002`.

@@ -4,7 +4,7 @@ import com.scheideckerantunes.notes.common.AuditedEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -30,7 +30,7 @@ public class Tag extends AuditedEntity {
 
     public Tag(UUID teamId, String name) {
         this.teamId = teamId;
-        normalizedName = name.strip().toLowerCase(Locale.ROOT);
+        normalizedName = Objects.requireNonNull(TagNames.normalize(name));
     }
 
     public UUID getTeamId() {

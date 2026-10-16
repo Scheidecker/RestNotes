@@ -35,6 +35,7 @@ public class NoteService {
     private final NotebookAuthorization authorization;
     private final NoteWriteAccess writeAccess;
     private final NoteTagRepository tags;
+    private final TagRepository tagCatalog;
     private final NoteHistoryRepository history;
     private final ActivityLogRepository activity;
     private final EntityManager entityManager;
@@ -43,7 +44,8 @@ public class NoteService {
 
     public NoteService(NoteRepository notes, NotebookRepository notebooks, NotebookAuthorization authorization,
             NoteWriteAccess writeAccess, NoteTagRepository tags, NoteHistoryRepository history,
-            ActivityLogRepository activity, EntityManager entityManager, ObjectMapper json, Clock clock) {
+            ActivityLogRepository activity, EntityManager entityManager, ObjectMapper json, Clock clock,
+            TagRepository tagCatalog) {
         this.notes = notes;
         this.notebooks = notebooks;
         this.authorization = authorization;
@@ -54,6 +56,7 @@ public class NoteService {
         this.entityManager = entityManager;
         this.json = json;
         this.clock = clock;
+        this.tagCatalog = tagCatalog;
     }
 
     @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
@@ -114,6 +117,47 @@ public class NoteService {
             record(locked.note(), actor, "NOTE_ARCHIVED");
         }
         return etag(locked.note(), locked.access(), actor);
+    }
+
+    @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
+    public NoteResponse addTag(UUID noteId, UUID actor, String ifMatch, AddTagRequest request) {
+        var locked = writable(noteId, actor, ifMatch, false);
+        Note note = locked.note();
+        String name = TagNames.require(request.name());
+        var existing = tagCatalog.findByTeamIdAndNormalizedName(note.getTeamId(), name);
+        if (existing.isPresent() && tags.existsById(new NoteTagId(noteId, existing.get().getId()))) {
+            return response(note, locked.access());
+        }
+        if (tagNames(noteId).size() >= NoteLimits.TAGS) {
+            throw new NoteOperationException(NoteOperationException.Code.TAG_LIMIT);
+        }
+        Tag tag = existing.orElseGet(() -> tagCatalog.saveAndFlush(new Tag(note.getTeamId(), name)));
+        tags.saveAndFlush(new NoteTag(noteId, tag.getId(), note.getTeamId()));
+        tagChanged(note, actor, "NOTE_TAGGED");
+        return response(note, locked.access());
+    }
+
+    @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
+    public String removeTag(UUID noteId, UUID actor, String name, String ifMatch) {
+        var locked = writable(noteId, actor, ifMatch, false);
+        Note note = locked.note();
+        var tag = tagCatalog.findByTeamIdAndNormalizedName(note.getTeamId(), TagNames.require(name));
+        if (tag.isPresent()) {
+            var association = tags.findById(new NoteTagId(noteId, tag.get().getId()));
+            if (association.isPresent()) {
+                tags.delete(association.get());
+                tags.flush();
+                tagChanged(note, actor, "NOTE_UNTAGGED");
+            }
+        }
+        return etag(note, locked.access(), actor);
+    }
+
+    private void tagChanged(Note note, UUID actor, String action) {
+        note.tagsChanged(actor);
+        notes.flush();
+        snapshot(note, actor);
+        record(note, actor, action);
     }
 
     private LockedNote writable(UUID noteId, UUID actor, String ifMatch, boolean allowArchived) {

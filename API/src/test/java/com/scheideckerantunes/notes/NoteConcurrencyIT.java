@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.scheideckerantunes.notes.common.ResourceNotFoundException;
 import com.scheideckerantunes.notes.history.NoteHistoryRepository;
 import com.scheideckerantunes.notes.note.CreateNoteRequest;
+import com.scheideckerantunes.notes.note.AddTagRequest;
+import com.scheideckerantunes.notes.note.TagRepository;
 import com.scheideckerantunes.notes.note.NoteEtags;
 import com.scheideckerantunes.notes.note.NoteOperationException;
 import com.scheideckerantunes.notes.note.NoteRepository;
@@ -58,6 +60,8 @@ class NoteConcurrencyIT extends MySqlIntegrationSupport {
     private NoteRepository notes;
     @Autowired
     private NoteHistoryRepository history;
+    @Autowired
+    private TagRepository catalog;
     @Autowired
     private NotebookService notebooks;
     @Autowired
@@ -160,6 +164,109 @@ class NoteConcurrencyIT extends MySqlIntegrationSupport {
         }
     }
 
+    @Test
+    void tagAndContentChangesCannotBothCommitAgainstOneValidator() throws Exception {
+        try (Fixture fixture = new Fixture()) {
+            String tag = fixture.tag(OWNER);
+            String name = fixture.label("race");
+            assertThat(race(
+                    () -> result(() -> service.addTag(fixture.noteId, OWNER, tag, new AddTagRequest(name))),
+                    () -> result(() -> service.patch(fixture.noteId, OWNER, tag, content("Concurrent content")))))
+                    .containsExactlyInAnyOrder(200, 412);
+            assertThat(notes.findById(fixture.noteId).orElseThrow().getVersion()).isEqualTo(1);
+            assertThat(history.findLatestVersion(fixture.noteId)).isEqualTo(2);
+        }
+    }
+
+    @Test
+    void competingTagsHaveOneWinnerAndNoOrphanCatalogEntry() throws Exception {
+        try (Fixture fixture = new Fixture()) {
+            String tag = fixture.tag(OWNER);
+            String first = fixture.label("first");
+            String second = fixture.label("second");
+            assertThat(race(
+                    () -> result(() -> service.addTag(fixture.noteId, OWNER, tag, new AddTagRequest(first))),
+                    () -> result(() -> service.addTag(fixture.noteId, OWNER, tag, new AddTagRequest(second)))))
+                    .containsExactlyInAnyOrder(200, 412);
+            assertThat(service.detail(fixture.noteId, OWNER).tags()).hasSize(1);
+            int rows = (catalog.findByTeamIdAndNormalizedName(OWNER_TEAM, first).isPresent() ? 1 : 0)
+                    + (catalog.findByTeamIdAndNormalizedName(OWNER_TEAM, second).isPresent() ? 1 : 0);
+            assertThat(rows).isEqualTo(1);
+            assertThat(fixture.actionCount("NOTE_TAGGED")).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void concurrentBoundaryAddsCannotExceedTwentyTags() throws Exception {
+        try (Fixture fixture = new Fixture()) {
+            for (int index = 0; index < 19; index++) {
+                service.addTag(fixture.noteId, OWNER, fixture.tag(OWNER),
+                        new AddTagRequest(fixture.label("base-" + index)));
+            }
+            String tag = fixture.tag(OWNER);
+            String first = fixture.label("twentieth");
+            String second = fixture.label("overflow");
+            assertThat(race(
+                    () -> result(() -> service.addTag(fixture.noteId, OWNER, tag, new AddTagRequest(first))),
+                    () -> result(() -> service.addTag(fixture.noteId, OWNER, tag, new AddTagRequest(second)))))
+                    .containsExactlyInAnyOrder(200, 412);
+            assertThat(service.detail(fixture.noteId, OWNER).tags()).hasSize(20);
+            assertThat(history.findLatestVersion(fixture.noteId)).isEqualTo(21);
+        }
+    }
+
+    @Test
+    void concurrentTeamCatalogAliasesAcrossNotesReuseOneRow() throws Exception {
+        try (Fixture first = new Fixture(); Fixture second = new Fixture()) {
+            String name = first.label("café");
+            String alias = name.replace("café", "CAFE");
+            String firstTag = first.tag(OWNER);
+            String secondTag = second.tag(OWNER);
+            assertThat(race(
+                    () -> result(() -> service.addTag(first.noteId, OWNER, firstTag, new AddTagRequest(name))),
+                    () -> result(() -> service.addTag(second.noteId, OWNER, secondTag, new AddTagRequest(alias)))))
+                    .containsExactlyInAnyOrder(200, 200);
+            assertThat(catalog.findByTeamIdAndNormalizedName(OWNER_TEAM, name).orElseThrow().getId())
+                    .isEqualTo(catalog.findByTeamIdAndNormalizedName(OWNER_TEAM, alias).orElseThrow().getId());
+            assertThat(service.detail(first.noteId, OWNER).tags())
+                    .isEqualTo(service.detail(second.noteId, OWNER).tags());
+        }
+    }
+
+    @Test
+    void failedTagAdditionRollsBackCatalogAssociationVersionHistoryAndActivity() {
+        try (Fixture fixture = new Fixture()) {
+            String name = fixture.label("rollback-add");
+            String tag = fixture.tag(OWNER);
+            assertThatThrownBy(() -> transaction().executeWithoutResult(status -> {
+                service.addTag(fixture.noteId, OWNER, tag, new AddTagRequest(name));
+                throw new IllegalStateException("Abort this test transaction");
+            })).isInstanceOf(IllegalStateException.class);
+            assertThat(service.detail(fixture.noteId, OWNER).tags()).isEmpty();
+            assertThat(catalog.findByTeamIdAndNormalizedName(OWNER_TEAM, name)).isEmpty();
+            assertThat(notes.findById(fixture.noteId).orElseThrow().getVersion()).isZero();
+            assertThat(history.findLatestVersion(fixture.noteId)).isEqualTo(1);
+            assertThat(fixture.actionCount("NOTE_TAGGED")).isZero();
+        }
+    }
+
+    @Test
+    void failedTagRemovalRestoresAssociationVersionHistoryAndActivity() {
+        try (Fixture fixture = new Fixture()) {
+            String name = fixture.label("rollback-del");
+            service.addTag(fixture.noteId, OWNER, fixture.tag(OWNER), new AddTagRequest(name));
+            String tag = fixture.tag(OWNER);
+            assertThatThrownBy(() -> transaction().executeWithoutResult(status -> {
+                service.removeTag(fixture.noteId, OWNER, name, tag);
+                throw new IllegalStateException("Abort this test transaction");
+            })).isInstanceOf(IllegalStateException.class);
+            assertThat(service.detail(fixture.noteId, OWNER).tags()).containsExactly(name);
+            assertThat(notes.findById(fixture.noteId).orElseThrow().getVersion()).isEqualTo(1);
+            assertThat(history.findLatestVersion(fixture.noteId)).isEqualTo(2);
+            assertThat(fixture.actionCount("NOTE_UNTAGGED")).isZero();
+        }
+    }
+
     private TransactionTemplate transaction() {
         var template = new TransactionTemplate(transactions);
         template.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
@@ -211,6 +318,14 @@ class NoteConcurrencyIT extends MySqlIntegrationSupport {
                 new CreateNotebookRequest(OWNER_TEAM, "Concurrent notes", null)).id();
         private final UUID noteId = service.create(bookId, OWNER, new CreateNoteRequest("Original", "", false)).id();
         private final List<UUID> userIds = new ArrayList<>();
+        private final String tagPrefix = UUID.randomUUID() + "-";
+        private final List<String> tagNames = new ArrayList<>();
+
+        String label(String suffix) {
+            String name = tagPrefix + suffix;
+            tagNames.add(name);
+            return name;
+        }
 
         String tag(UUID actor) {
             return NoteEtags.from(service.detail(noteId, actor), actor);
@@ -243,9 +358,15 @@ class NoteConcurrencyIT extends MySqlIntegrationSupport {
                 jdbc.update("DELETE FROM note_history WHERE note_id = UUID_TO_BIN(?)", noteId.toString());
                 jdbc.update("DELETE FROM activity_logs WHERE entity_id IN (UUID_TO_BIN(?), UUID_TO_BIN(?))",
                         noteId.toString(), bookId.toString());
+                jdbc.update("DELETE FROM note_tags WHERE note_id = UUID_TO_BIN(?)", noteId.toString());
                 jdbc.update("DELETE FROM notes WHERE notebook_id = UUID_TO_BIN(?)", bookId.toString());
                 jdbc.update("DELETE FROM notebook_shares WHERE notebook_id = UUID_TO_BIN(?)", bookId.toString());
                 jdbc.update("DELETE FROM notebooks WHERE id = UUID_TO_BIN(?)", bookId.toString());
+                for (String name : tagNames) {
+                    jdbc.update("DELETE FROM tags WHERE team_id = UUID_TO_BIN(?) AND normalized_name = ? "
+                            + "AND NOT EXISTS (SELECT 1 FROM note_tags WHERE tag_id = tags.id)",
+                            OWNER_TEAM.toString(), name);
+                }
                 for (UUID userId : userIds) {
                     jdbc.update("DELETE FROM activity_logs WHERE entity_type = 'membership' "
                             + "AND entity_id = UUID_TO_BIN(?)",

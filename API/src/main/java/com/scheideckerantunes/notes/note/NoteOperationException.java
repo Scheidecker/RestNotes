@@ -22,7 +22,8 @@ public class NoteOperationException extends RuntimeException {
         CONTENT_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "Note content exceeds 262144 UTF-8 bytes"),
         BODY_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "Note JSON body exceeds 2097152 bytes"),
         ACCESS_CHANGED(HttpStatus.CONFLICT, "Notebook access changed; retrieve it and retry"),
-        TAG_LIMIT(HttpStatus.CONFLICT, "Note tag count exceeds the supported limit of 20");
+        TAG_LIMIT(HttpStatus.CONFLICT, "A note supports at most 20 tags"),
+        INVALID_TAG_NAME(HttpStatus.BAD_REQUEST, "Tag name is blank, too long or not safely routable");
 
         private final HttpStatus status;
         private final String detail;

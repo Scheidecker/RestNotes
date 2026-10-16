@@ -435,7 +435,7 @@ curl --fail-with-body --request PUT \
 refresh_note_etag
 ```
 
-Expected: 200 with a new note version/ETag. All three title/content/pinned fields are required. PUT preserves read-only tags, creator, notebook/team and creation time. A real change appends an immutable content/pinning/tag-name snapshot and activity in the same transaction; an identical representation is a no-op.
+Expected: 200 with a new note version/ETag. All three title/content/pinned fields are required. PUT preserves tags, creator, notebook/team and creation time; use the dedicated tag routes below to change associations. A real change appends an immutable content/pinning/tag-name snapshot and activity in the same transaction; an identical representation is a no-op.
 
 ### 5. Partial update — PATCH /api/v1/notes/{id}
 
@@ -496,12 +496,98 @@ Expected: 204 with a new archive ETag, then 404. Content/tag/history rows remain
 
 Oversized Markdown or note JSON returns 413. The JSON body cap is 2 MiB, including chunked requests; the content cap is 256 KiB in UTF-8 bytes, not characters. Unknown fields and incomplete/invalid DTOs return sanitized 400 responses without echoing Markdown.
 
-Cleanup:
+Keep the tokens, active notebook ID and refresh functions for tag management below.
+
+## Tag management
+The note above was archived, but its notebook remains active and shared with Marketing as EDITOR. Create a fresh note in it; re-login first if either token expired:
+
+```bash
+RN_NOTE_ID=$(
+  curl --silent --show-error --fail-with-body \
+    --header @<(printf 'Authorization: Bearer %s\n' "$RN_TOKEN") \
+    --header 'Content-Type: application/json' \
+    --data '{"title":"Tag playground","content":""}' \
+    "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID/notes" |
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])'
+)
+export RN_NOTE_ID
+refresh_note_etag
+RN_STALE_NOTE_ETAG=$RN_NOTE_ETAG
+export RN_STALE_NOTE_ETAG
+```
+
+### 1. Add — POST /api/v1/notes/{id}/tags
+
+```bash
+curl --fail-with-body --include --request POST \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+  --header 'Content-Type: application/json' --data '{"name":" Design Review "}' \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/tags"
+refresh_note_etag
+```
+
+Expected: 200 with a full note, tags including design review and an advanced ETag. The route accepts a single name, not a list or client team ID. Creator/title/content/pinning are unchanged; updater/timestamp/version, immutable snapshot and NOTE_TAGGED activity change atomically.
+
+Names use strip/lowercase ROOT and validation after normalization (1–50 UTF-16 units). Controls, Unicode format characters, line/paragraph separators, `/`, `\`, `;`, `%`, and exact `.`/`..` are rejected. Spaces, Unicode, `+`, `#` and internal dots are supported. JSON contains the ordinary name; URI encoding is only for the DELETE path.
+
+Catalog scope is the note's owning team, even for a shared editor. Case/accent-equivalent names reuse the existing stored spelling under MySQL collation (CAFE may resolve to café). No global catalog/list/rename/delete API is exposed; GET note returns its bounded tag names.
+
+Repeat with the current validator to demonstrate a no-op:
+
+```bash
+curl --fail-with-body --include --request POST \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+  --header 'Content-Type: application/json' --data '{"name":"DESIGN REVIEW"}' \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/tags"
+```
+
+Expected: 200 with unchanged ETag/updater/history/activity. Using RN_STALE_NOTE_ETAG instead still returns 412, even for a duplicate. Missing If-Match is 428; weak/wildcard/multiple/malformed validators are 400.
+
+A note supports 20 tags. A new 21st returns 409 TAG_LIMIT before inserting a catalog row. Duplicate adds and absent removals remain no-ops at capacity with a current validator.
+
+### 2. Shared add and encoded removal — DELETE /api/v1/notes/{id}/tags/{tagName}
+Retrieve the shared editor's own validator for this fresh note:
+
+```bash
+RN_RECIPIENT_NOTE_ETAG=$(
+  printf 'Authorization: Bearer %s\n' "$RN_RECIPIENT_TOKEN" |
+    curl --silent --show-error --fail-with-body --header @- --dump-header - --output /dev/null \
+      "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID" |
+    python3 -c 'import sys; headers=sys.stdin.read().splitlines()
+print(next(line.split(":",1)[1].strip() for line in headers if line.lower().startswith("etag:")))'
+)
+export RN_RECIPIENT_NOTE_ETAG
+curl --fail-with-body --include --request POST \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_RECIPIENT_TOKEN" "$RN_RECIPIENT_NOTE_ETAG") \
+  --header 'Content-Type: application/json' --data '{"name":"C++"}' \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/tags"
+refresh_note_etag
+```
+
+Expected: 200 with c++, updatedBy set to Marketing's user and accessLevel EDITOR. The catalog row still belongs to the owning team. A recipient VIEWER stays read-only even with an EDITOR grant (403); revoked/inaccessible/archived resources return 404. Never reuse another caller's ETag.
+
+Remove the plus-containing name with the owner's freshly fetched validator:
+
+```bash
+export RN_TAG_NAME='C++'
+RN_TAG_SEGMENT=$(
+  python3 -c 'import os,urllib.parse; print(urllib.parse.quote(os.environ["RN_TAG_NAME"],safe=""))'
+)
+curl --fail-with-body --include --request DELETE \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/tags/$RN_TAG_SEGMENT"
+refresh_note_etag
+```
+
+Expected: 204 with an advanced note ETag, one snapshot and NOTE_UNTAGGED activity. Repeating with the current validator is 204 with no further changes. The reusable catalog row is retained, including when no note currently uses it. Use the same encoding procedure for names with spaces, Unicode or hashes; never append raw `#` or double-encode a segment.
+
+Cleanup (the tag playground note remains available for inspection):
 
 ```bash
 unset RN_TOKEN RN_RECIPIENT_TOKEN RN_EMAIL RN_FULL_NAME RN_TEAM_ID RN_CREATOR_ID RN_MEMBER_EMAIL RN_MEMBER_ID
 unset RN_NOTEBOOK_ID RN_NOTEBOOK_ETAG RN_STALE_NOTEBOOK_ETAG RN_SHARE_TEAM_ID
 unset RN_NOTE_ID RN_NOTE_ETAG RN_STALE_NOTE_ETAG RN_RECIPIENT_NOTE_ETAG
+unset RN_TAG_NAME RN_TAG_SEGMENT
 unset -f refresh_notebook_etag refresh_note_etag
 ```
 
@@ -519,7 +605,7 @@ Run `curl --fail-with-body http://localhost:8081/v3/api-docs/swagger-config` for
 
 Run `curl --fail-with-body --location http://localhost:8081/swagger-ui.html` to follow the redirect to Swagger HTML (200). Direct assets are served under `/swagger-ui/`.
 
-These routes are disabled and denied in UAT/prod. In dev/test the definition includes authentication/profile and team/member operations with bearerAuth security for protected endpoints.
+These routes are disabled and denied in UAT/prod. In dev/test the definition includes identity/teams, notebooks/sharing and note CRUD/tag operations with bearerAuth security for protected endpoints.
 
 ## Verify fail-closed access
 Run `curl --include http://localhost:8081/actuator/env` (401).
@@ -529,4 +615,4 @@ Run `curl --include http://localhost:8081/api/v1/notes` (401 anonymously; 403 wi
 ## Persistence and remaining workflows
 The same operational endpoints now run with MySQL/Liquibase and JPA schema validation. Readiness includes database connectivity; health still hides component details.
 
-The [schema reference](Database-Schema-Reference.md#required-development-seed-dataset) lists sample IDs and local-only credentials. Tag mutations, comments, history/restore, search and activity HTTP remain unavailable. Snapshots/activity are already recorded internally for CRUD, but their read/restore endpoints follow later.
+The [schema reference](Database-Schema-Reference.md#required-development-seed-dataset) lists sample IDs and local-only credentials. Comments, history/restore, search and activity HTTP remain unavailable. Snapshots/activity are already recorded internally for CRUD/tags, but their read/restore endpoints follow later.

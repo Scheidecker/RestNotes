@@ -1,7 +1,7 @@
 # RestNotes
 Author: Carlos Scheidecker
 
-Spring Boot REST API for small-team notes. **Note CRUD increment:** identity/teams, notebook sharing and Markdown note creation/listing/retrieval/updates/archive are implemented, including pinning and atomic history snapshots. Tag mutation, comments and later collaboration/history REST workflows remain review-gated.
+Spring Boot REST API for small-team notes. **Tag management increment:** identity/teams, notebook sharing, Markdown note CRUD/pinning and note-scoped tag management are implemented, with atomic history snapshots. Comments and later collaboration/history REST workflows remain review-gated.
 
 ## Stack
 Java 25, Maven Wrapper 3.9.16, Spring Boot 4.1.1, Springdoc 3.1.1, Spring MVC, Validation, Security and Actuator. Spring dependency versions come from the Boot parent. The optional `spring-milestones` Maven profile declares the requested milestone repository with snapshots disabled; normal builds use Central.
@@ -71,13 +71,19 @@ Note endpoints:
 - `POST /api/v1/notebooks/{id}/notes`: create with title/content and optional pinned (default false).
 - `GET /api/v1/notebooks/{id}/notes?page=0&size=20`: visible summaries, pinned first then update-time/ID; no Markdown bodies.
 - `GET /api/v1/notes/{id}`: full note, bounded existing tag names, capability and ETag.
-- `PUT /api/v1/notes/{id}`: replace required title/content/pinned; preserve read-only tag associations.
+- `PUT /api/v1/notes/{id}`: replace required title/content/pinned; preserve tag associations.
 - `PATCH /api/v1/notes/{id}`: partially update those fields; omission is unchanged, explicit null is rejected.
 - `DELETE /api/v1/notes/{id}`: conditionally archive without physical deletion.
 
 Note writes require current EDITOR-or-higher access (including capped shared grants). PUT/PATCH/DELETE require a current note If-Match. Note ETags include both note/notebook versions, caller and role; a notebook metadata/permission change invalidates old note validators too. Missing precondition is 428, stale is 412, malformed/weak/wildcard/multiple validators are 400.
 
 Markdown content may be empty but is limited to 256 KiB UTF-8; note JSON bodies are limited to 2 MiB, including streamed/chunked requests. Oversized input returns 413. Titles are trimmed/nonblank and at most 255 characters. Create/change writes atomically save immutable history plus activity; no-op updates do neither. Archive records activity without duplicating an unchanged content snapshot. See the [note walkthrough](docs/CURL_Guide.md#note-crud).
+
+Tag endpoints (same current EDITOR-or-higher access and note If-Match):
+- `POST /api/v1/notes/{id}/tags`: add one `{name}`; 200 with the full note and ETag.
+- `DELETE /api/v1/notes/{id}/tags/{tagName}`: remove an association; 204 with ETag. URI-encode the name segment.
+
+Names are stripped/lowercased, validated after normalization (1–50 UTF-16 units), and scoped to the note's owning team, including shared edits. Existing collation-equivalent names reuse the stored canonical spelling. A note supports at most 20 tags; a new 21st returns 409 TAG_LIMIT without inserting a catalog row. Duplicate adds and absent removals with a current validator are no-ops, even at capacity; stale requests still return 412. Real changes advance the note version/updater and atomically append history plus NOTE_TAGGED/NOTE_UNTAGGED activity without changing content/pinning. Removal retains reusable catalog entries. PUT/PATCH do not accept tags, and no global catalog/rename/delete endpoint exists. See the [tag walkthrough](docs/CURL_Guide.md#tag-management) for name restrictions and encoded paths.
 
 ## Configuration
 All Spring configuration is in `src/main/resources/application.yml`.
@@ -116,7 +122,7 @@ Never store real secrets in Git, logs, images or command-line literals. `.env.ex
 - `./mvnw checkstyle:check`: source style checks.
 - `docker compose config --quiet`: validate container configuration without rendering values.
 
-Tests cover identity/team authorization, notebooks/sharing, note CRUD, byte/body limits, null/omission behavior, content snapshots, no-ops, concurrent edits/revocations/downgrades and transactional rollback, plus prior migration/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
+Tests cover identity/team authorization, notebooks/sharing, note CRUD/tags, byte/body limits, null/omission behavior, snapshots, canonical catalog reuse, tag capacity, no-ops, concurrent edits/revocations/downgrades and transactional rollback, plus prior migration/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
 
 ## Required demo data — Phase 2
 Liquibase pre-populates exactly two isolated teams when demo mode is explicitly enabled:
@@ -138,7 +144,7 @@ Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deploymen
 1. Foundation — completed.
 2. Persistence, Liquibase and demo fixtures — completed.
 3. Identity, teams and role enforcement — completed in this increment.
-4. Notebook/sharing and note CRUD/pinning/snapshots — implemented; tag mutation REST still pending.
+4. Notebook/sharing and note CRUD/pinning/tags/snapshots — implemented; awaiting review/manual commit.
 5. Comments, history restore, search and activity.
 6. Release validation and complete deployment/usage manuals.
 

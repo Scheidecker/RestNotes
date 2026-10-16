@@ -87,6 +87,22 @@ public class NoteController {
         return ResponseEntity.noContent().eTag(notes.archive(noteId, actor(jwt), ifMatch)).build();
     }
 
+    @PostMapping("/notes/{noteId}/tags")
+    @Operation(summary = "Add/reuse one team-scoped tag; current note If-Match and EDITOR access required")
+    public ResponseEntity<NoteResponse> addTag(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID noteId,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @Valid @RequestBody AddTagRequest request) {
+        NoteResponse result = notes.addTag(noteId, actor(jwt), ifMatch, request);
+        return ResponseEntity.ok().eTag(NoteEtags.from(result, actor(jwt))).body(result);
+    }
+
+    @DeleteMapping("/notes/{noteId}/tags/{tagName}")
+    @Operation(summary = "Remove a tag association without deleting the reusable team catalog entry")
+    public ResponseEntity<Void> removeTag(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID noteId,
+            @PathVariable String tagName, @RequestHeader(value = "If-Match", required = false) String ifMatch) {
+        return ResponseEntity.noContent().eTag(notes.removeTag(noteId, actor(jwt), tagName, ifMatch)).build();
+    }
+
     private UUID actor(Jwt jwt) {
         return UUID.fromString(jwt.getSubject());
     }

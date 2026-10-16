@@ -3,7 +3,7 @@ services:
   api:
     build:
       context: .
-    image: restnotes:phase4-notes
+    image: restnotes:phase4-tags
     depends_on:
       mysql:
         condition: service_healthy
