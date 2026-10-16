@@ -30,7 +30,8 @@ class MigrationLifecycleIT {
             JdbcTemplate jdbc = new JdbcTemplate(source);
             migrate(source, "schema.yml", null);
             assertThat(count(jdbc, "users")).isZero();
-            assertThat(count(jdbc, "DATABASECHANGELOG")).isEqualTo(3);
+            assertThat(count(jdbc, "DATABASECHANGELOG")).isEqualTo(4);
+            assertThat(count(jdbc, "note_locks")).isZero();
             migrate(source, "demo.yml", null);
             assertThat(count(jdbc, "users")).isZero();
             migrate(source, "demo.yml", "schema");
@@ -45,7 +46,7 @@ class MigrationLifecycleIT {
             migrate(source, "demo.yml", "demo");
             migrate(source, "schema.yml", null);
             assertThat(count(jdbc, "users")).isEqualTo(2);
-            assertThat(count(jdbc, "DATABASECHANGELOG")).isEqualTo(4);
+            assertThat(count(jdbc, "DATABASECHANGELOG")).isEqualTo(5);
             assertThat(jdbc.queryForObject("SELECT title FROM notes WHERE id = UUID_TO_BIN(?)",
                     String.class, "40000000-0000-4000-8000-000000000001")).isEqualTo("Preserved edit");
             assertThat(jdbc.queryForObject(

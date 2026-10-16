@@ -23,7 +23,10 @@ public class NoteOperationException extends RuntimeException {
         BODY_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "Note JSON body exceeds 2097152 bytes"),
         ACCESS_CHANGED(HttpStatus.CONFLICT, "Notebook access changed; retrieve it and retry"),
         TAG_LIMIT(HttpStatus.CONFLICT, "A note supports at most 20 tags"),
-        INVALID_TAG_NAME(HttpStatus.BAD_REQUEST, "Tag name is blank, too long or not safely routable");
+        INVALID_TAG_NAME(HttpStatus.BAD_REQUEST, "Tag name is blank, too long or not safely routable"),
+        NOTE_LOCKED(HttpStatus.LOCKED, "An active editing lease requires its owner's lock token"),
+        STALE_LOCK_TOKEN(HttpStatus.CONFLICT, "Lock token is stale or expired; retrieve current lock status"),
+        INVALID_LOCK_TOKEN(HttpStatus.BAD_REQUEST, "Supply one valid opaque note lock token");
 
         private final HttpStatus status;
         private final String detail;

@@ -1,9 +1,9 @@
-# Quick start — note CRUD and tags
+# Quick start — notes, tags and locking
 Author: Carlos Scheidecker
 
 From the API directory, run `docker compose up --build --wait`. Compose starts MySQL and the API, initializes the database/user, and applies Liquibase schema plus explicitly enabled local demo data. No manual SQL or extra Bash script is needed. Local defaults are development-only.
 
-Open http://localhost:8081/actuator/health (expect UP) and http://localhost:8081/swagger-ui.html (identity, teams, notebooks, sharing, note CRUD and tags are documented).
+Open http://localhost:8081/actuator/health (expect UP) and http://localhost:8081/swagger-ui.html (identity, teams, notebooks, sharing, notes, tags and editing leases are documented).
 
 Run `./mvnw test` for unit/style checks and `./mvnw verify` for the full real-MySQL integration suite (Docker required). Stop Compose with `docker compose down`, without deleting volumes; restart preserves records. Container builds run unit/style checks, not Docker-backed integration tests.
 
@@ -13,8 +13,10 @@ New users have no memberships until they create a team or an admin adds them. Co
 
 Add one tag with POST `/api/v1/notes/{id}/tags` and `{name}` (200 with full note/ETag); remove with DELETE `/api/v1/notes/{id}/tags/{tagName}` (204 with ETag). URI-encode the path segment. Names normalize to stripped lowercase and are limited to 50 UTF-16 units; notes support 20 tags. Current-validator duplicate adds/absent removals are no-ops. Catalog entries belong to the note's team and survive removal; PUT/PATCH do not accept tags.
 
-Local dev/test generate ephemeral signing keys unless both key-file locations are configured: restarting the API invalidates existing tokens, so log in again. UAT/prod require mounted persistent keys and default registration off.
+For optional exclusive editing, follow [note locking](CURL_Guide.md#note-locking): GET lock status, POST with note If-Match to acquire a five-minute lease, then send Note-Lock-Token on note/tag writes, renewal and release. Capture the initial secret without printing it; renewal returns no replacement token. Unlocked notes retain ordinary ETag writes. Lease conflicts are 423; supplied stale/expired tokens are 409. No admin bypass exists; revoked holders cannot renew and others can take over after expiry.
+
+Local dev/test generate ephemeral JWT signing keys unless both key-file locations are configured: restarting the API invalidates existing bearer tokens, so log in again. Database editing leases and their separate lock tokens survive restart until expiry. UAT/prod require mounted persistent keys and default registration off.
 
 For a host-run JVM, provision a reachable MySQL instance and configure DB_URL/DB_USERNAME/DB_PASSWORD as described in [README](../README.md). Compose does not expose MySQL to the host by default.
 
-See [API design](API.Design.md) and [CURL guide](CURL_Guide.md). Review and manually commit this tag increment before requesting collaboration/history APIs.
+See [API design](API.Design.md) and [CURL guide](CURL_Guide.md). Review and manually commit this locking increment before requesting collaboration/history APIs.

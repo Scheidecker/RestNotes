@@ -11,6 +11,8 @@ Never edit a changeset that has been applied to a persistent database. Add forwa
 
 Migration `004-notebook-sharing` adds notebook_shares and extends the activity action check without rewriting changesets 001–003. Existing edited notebooks/notes/users are preserved; no grants are seeded. Upgrade tests reproduce the prior migration identities/checksums and verify the additive upgrade. Normal startup on a previous local volume should apply this migration, not require a reset.
 
+Migration `005-note-locks` adds optional editing leases without rewriting applied schema/demo/sharing changesets. Upgrade tests cover both pre-sharing and pre-lease schemas, preserving existing content/shares and seed identities. Existing volumes upgrade normally; do not reset them.
+
 ## Tables
 - `users`: normalized unique email, BCrypt password hash, display name and timestamps.
 - `teams`: name/description, timestamps and optimistic version.
@@ -20,13 +22,14 @@ Migration `004-notebook-sharing` adds notebook_shares and extends the activity a
 - `notes`: notebook/team, Markdown title/content, pinned state, attribution, archive timestamp and optimistic version.
 - `tags`: team-scoped normalized name and timestamps.
 - `note_tags`: note/tag key and shared team column constrained against both parent tables.
+- `note_locks`: one row per note, owner UUID, SHA-256 token digest, acquired/expiry UTC timestamps; restrictive note/user foreign keys and deadline/digest checks.
 - `comments`: note, author, bounded plain text and timestamps.
 - `note_history`: unique positive `(note_id, version_number)`, immutable title/content/pinning/tag-name JSON snapshot, editor and timestamp.
 - `activity_logs`: immutable team/user/action/entity metadata and timestamp; no note contents or secrets.
 
 All UUIDs use ordinary BINARY(16) bytes: SQL `UUID_TO_BIN(uuid)` without byte swapping matches Hibernate. References use explicit UUID fields rather than bidirectional entity collections. Foreign keys enforce existence; team services now enforce membership authorization and last-admin protection under a team-row lock.
 
-All timestamps use UTC DATETIME(6) and application-assigned microsecond Instants. `version` is an optimistic concurrency token, not the history sequence. Content is MEDIUMTEXT with a 256 KiB byte check; comment length is 1–10,000 characters. Tags are normalized and unique per team.
+All timestamps use UTC DATETIME(6). Domain timestamps use application-assigned microsecond Instants; lease timestamps use database UTC time. `version` is an optimistic concurrency token, not the history sequence. Content is MEDIUMTEXT with a 256 KiB byte check; comment length is 1–10,000 characters. Tags are normalized and unique per team.
 
 Notebook shares are team-level VIEWER/EDITOR only with restrictive foreign keys and a recipient lookup index. Grant writes also advance the owning notebook's JPA version/update timestamp and record activity atomically. Archiving retains share/note/history rows but removes access through all ordinary queries. Current membership and grant checks happen before pagination/counting; strongest access paths combine without duplicate results.
 
@@ -35,6 +38,8 @@ Composite foreign keys enforce notebook/note ownership and same-team note/tag li
 Note CRUD/tag management needs no schema migration. Initial snapshots use version_number 1; real title/content/pinning or tag association changes allocate max(version_number)+1 under the note row lock, not from the JPA version. No-op/failed writes add nothing. Archive changes the row version and activity but does not duplicate a content snapshot. Tag names are bounded to 20 in responses/snapshots.
 
 Tag mutation locks owning/access-path teams, notebook and note, checks current role/If-Match, and updates links, note attribution/version, snapshots and NOTE_TAGGED/NOTE_UNTAGGED activity transactionally. Catalog scope always comes from the note's owning team, including for shared editors. Names are stripped/lowercased and validated after normalization (1–50 UTF-16 units, safe encoded path segments). The existing utf8mb4_0900_ai_ci uniqueness also equates case/accent aliases; catalog lookups reuse the stored canonical name. A new 21st association fails before inserting a catalog row. Duplicate adds/absent removals are no-ops with a current validator. Removing associations retains catalog entries; PUT/PATCH preserve links. These application-enforced limits must also be respected by operator SQL.
+
+Lease rows use JDBC in the same JPA-managed transaction; the authorized note row is locked before lease reads/writes, including absent-row acquisition. Expiry uses database UTC time after lock acquisition. Only a token digest is stored; raw tokens are never persisted. Lease-only operations do not update note rows or content history/activity. Active leases gate every note/tag mutation, while expired leases permit tokenless writes/takeover. Revoked holders cannot renew; a lease may block remaining editors for at most five minutes. Expired rows are replaced/deleted lazily; note archive removes its lease atomically. Notebook archive retains rows but hides all lease access. Operator SQL must preserve these service-enforced rules and must not bypass token/role checks.
 
 Indexes support user-to-team membership, notebook/team discovery, note lists, comments by time, history versions and activity by time. FULLTEXT covers note title/content. MySQL token length, stopwords and collation affect matching; this is not arbitrary substring search. Team-aware search is implemented later.
 

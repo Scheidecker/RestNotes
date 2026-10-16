@@ -81,6 +81,9 @@ public class SecurityConfiguration {
                     requests.requestMatchers(HttpMethod.DELETE, "/api/v1/notes/*").authenticated();
                     requests.requestMatchers(HttpMethod.POST, "/api/v1/notes/*/tags").authenticated();
                     requests.requestMatchers(HttpMethod.DELETE, "/api/v1/notes/*/tags/*").authenticated();
+                    requests.requestMatchers(HttpMethod.GET, "/api/v1/notes/*/lock").authenticated();
+                    requests.requestMatchers(HttpMethod.POST, "/api/v1/notes/*/lock").authenticated();
+                    requests.requestMatchers(HttpMethod.DELETE, "/api/v1/notes/*/lock").authenticated();
                     requests.requestMatchers(
                             "/actuator/health", "/actuator/health/liveness",
                             "/actuator/health/readiness", "/actuator/info").permitAll();

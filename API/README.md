@@ -1,7 +1,7 @@
 # RestNotes
 Author: Carlos Scheidecker
 
-Spring Boot REST API for small-team notes. **Tag management increment:** identity/teams, notebook sharing, Markdown note CRUD/pinning and note-scoped tag management are implemented, with atomic history snapshots. Comments and later collaboration/history REST workflows remain review-gated.
+Spring Boot REST API for small-team notes. **Note locking increment:** identity/teams, notebook sharing, Markdown note CRUD/pinning, tags and optional database-backed editing leases are implemented, with atomic history snapshots. Comments and later collaboration/history REST workflows remain review-gated.
 
 ## Stack
 Java 25, Maven Wrapper 3.9.16, Spring Boot 4.1.1, Springdoc 3.1.1, Spring MVC, Validation, Security and Actuator. Spring dependency versions come from the Boot parent. The optional `spring-milestones` Maven profile declares the requested milestone repository with snapshots disabled; normal builds use Central.
@@ -85,6 +85,15 @@ Tag endpoints (same current EDITOR-or-higher access and note If-Match):
 
 Names are stripped/lowercased, validated after normalization (1–50 UTF-16 units), and scoped to the note's owning team, including shared edits. Existing collation-equivalent names reuse the stored canonical spelling. A note supports at most 20 tags; a new 21st returns 409 TAG_LIMIT without inserting a catalog row. Duplicate adds and absent removals with a current validator are no-ops, even at capacity; stale requests still return 412. Real changes advance the note version/updater and atomically append history plus NOTE_TAGGED/NOTE_UNTAGGED activity without changing content/pinning. Removal retains reusable catalog entries. PUT/PATCH do not accept tags, and no global catalog/rename/delete endpoint exists. See the [tag walkthrough](docs/CURL_Guide.md#tag-management) for name restrictions and encoded paths.
 
+Note locking endpoints:
+- `GET /api/v1/notes/{id}/lock`: current readers retrieve active owner/expiry metadata, never tokens.
+- `POST /api/v1/notes/{id}/lock`: current editors acquire a five-minute lease with note If-Match; supplying the holder's Note-Lock-Token renews it.
+- `DELETE /api/v1/notes/{id}/lock`: current editors release with note If-Match and the holder's token; unlocked tokenless release is an idempotent 204.
+
+Locks are optional: unlocked notes retain ordinary ETag-based writes. While locked, all note PUT/PATCH/archive and tag mutations require the authenticated holder's Note-Lock-Token, including no-ops. Another client of the same user also needs the token. Conflicts return 423 NOTE_LOCKED; stale/expired supplied tokens return 409 STALE_LOCK_TOKEN rather than becoming unlocked writes; malformed tokens return 400. ETags remain mandatory.
+
+Acquisition returns 200, unchanged note ETag, ownerId/acquiredAt/expiresAt and a secret token; renewal returns metadata without reissuing it. Capture the token without printing it. Lease responses use no-store; only digests are persisted. Expiry is decided by database UTC time under ordered team/notebook/note locks, so takeover works across replicas without a timer. Losing access immediately prevents renewal/writes; others may wait up to five minutes for expiry. No force-unlock/admin bypass exists. Lease changes do not create content history/activity or update note attribution/version. Holder archive removes its lease; notebook archive hides all note/lease routes. See the [locking walkthrough](docs/CURL_Guide.md#note-locking).
+
 ## Configuration
 All Spring configuration is in `src/main/resources/application.yml`.
 - SERVER_PORT: 8081, then platform PORT as fallback for a host-run JVM. In Compose, SERVER_PORT controls the host port; the container listens on 8081.
@@ -122,7 +131,7 @@ Never store real secrets in Git, logs, images or command-line literals. `.env.ex
 - `./mvnw checkstyle:check`: source style checks.
 - `docker compose config --quiet`: validate container configuration without rendering values.
 
-Tests cover identity/team authorization, notebooks/sharing, note CRUD/tags, byte/body limits, null/omission behavior, snapshots, canonical catalog reuse, tag capacity, no-ops, concurrent edits/revocations/downgrades and transactional rollback, plus prior migration/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
+Tests cover identity/team authorization, notebooks/sharing, note CRUD/tags/leases, byte/body limits, null/omission behavior, snapshots, canonical catalog reuse, tag capacity, no-ops, lease expiry/token fencing, concurrent acquisition/edits/revocations/downgrades and transactional rollback, plus prior migration/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
 
 ## Required demo data — Phase 2
 Liquibase pre-populates exactly two isolated teams when demo mode is explicitly enabled:
@@ -144,7 +153,7 @@ Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deploymen
 1. Foundation — completed.
 2. Persistence, Liquibase and demo fixtures — completed.
 3. Identity, teams and role enforcement — completed in this increment.
-4. Notebook/sharing and note CRUD/pinning/tags/snapshots — implemented; awaiting review/manual commit.
+4. Notebook/sharing and note CRUD/pinning/tags/snapshots/editing leases — implemented; awaiting review/manual commit.
 5. Comments, history restore, search and activity.
 6. Release validation and complete deployment/usage manuals.
 

@@ -26,3 +26,12 @@ databaseChangeLog:
         - sqlFile:
             path: sql/004-notebook-sharing.sql
             relativeToChangelogFile: true
+  - changeSet:
+      id: 005-note-locks
+      author: Carlos Scheidecker
+      dbms: mysql
+      runInTransaction: false
+      changes:
+        - sqlFile:
+            path: sql/005-note-locks.sql
+            relativeToChangelogFile: true

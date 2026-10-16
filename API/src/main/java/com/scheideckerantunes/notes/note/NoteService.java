@@ -9,13 +9,9 @@ import com.scheideckerantunes.notes.history.NoteHistoryRepository;
 import com.scheideckerantunes.notes.notebook.Notebook;
 import com.scheideckerantunes.notes.notebook.NotebookAuthorization;
 import com.scheideckerantunes.notes.notebook.NotebookRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
-import jakarta.persistence.OptimisticLockException;
 import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -38,14 +34,15 @@ public class NoteService {
     private final TagRepository tagCatalog;
     private final NoteHistoryRepository history;
     private final ActivityLogRepository activity;
-    private final EntityManager entityManager;
+    private final LockedNotes lockedNotes;
+    private final NoteLocks locks;
     private final ObjectMapper json;
     private final Clock clock;
 
     public NoteService(NoteRepository notes, NotebookRepository notebooks, NotebookAuthorization authorization,
             NoteWriteAccess writeAccess, NoteTagRepository tags, NoteHistoryRepository history,
-            ActivityLogRepository activity, EntityManager entityManager, ObjectMapper json, Clock clock,
-            TagRepository tagCatalog) {
+            ActivityLogRepository activity, LockedNotes lockedNotes, ObjectMapper json, Clock clock,
+            TagRepository tagCatalog, NoteLocks locks) {
         this.notes = notes;
         this.notebooks = notebooks;
         this.authorization = authorization;
@@ -53,7 +50,8 @@ public class NoteService {
         this.tags = tags;
         this.history = history;
         this.activity = activity;
-        this.entityManager = entityManager;
+        this.lockedNotes = lockedNotes;
+        this.locks = locks;
         this.json = json;
         this.clock = clock;
         this.tagCatalog = tagCatalog;
@@ -84,7 +82,12 @@ public class NoteService {
 
     @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
     public NoteResponse replace(UUID noteId, UUID actor, String ifMatch, ReplaceNoteRequest request) {
-        var locked = writable(noteId, actor, ifMatch, false);
+        return replace(noteId, actor, ifMatch, request, null);
+    }
+
+    @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
+    public NoteResponse replace(UUID noteId, UUID actor, String ifMatch, ReplaceNoteRequest request, String lockToken) {
+        var locked = writable(noteId, actor, ifMatch, false, lockToken);
         requireContentBound(request.content());
         change(locked.note(), actor, request.title(), request.content(), request.pinned());
         return response(locked.note(), locked.access());
@@ -92,7 +95,12 @@ public class NoteService {
 
     @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
     public NoteResponse patch(UUID noteId, UUID actor, String ifMatch, PatchNoteRequest request) {
-        var locked = writable(noteId, actor, ifMatch, false);
+        return patch(noteId, actor, ifMatch, request, null);
+    }
+
+    @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
+    public NoteResponse patch(UUID noteId, UUID actor, String ifMatch, PatchNoteRequest request, String lockToken) {
+        var locked = writable(noteId, actor, ifMatch, false, lockToken);
         if (!request.titlePresent() && !request.contentPresent() && !request.pinnedPresent()) {
             throw new NoteOperationException(NoteOperationException.Code.EMPTY_PATCH);
         }
@@ -111,9 +119,15 @@ public class NoteService {
 
     @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
     public String archive(UUID noteId, UUID actor, String ifMatch) {
-        var locked = writable(noteId, actor, ifMatch, true);
+        return archive(noteId, actor, ifMatch, null);
+    }
+
+    @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
+    public String archive(UUID noteId, UUID actor, String ifMatch, String lockToken) {
+        var locked = writable(noteId, actor, ifMatch, true, lockToken);
         if (locked.note().archive(clock.instant(), actor)) {
             notes.flush();
+            locks.archived(noteId);
             record(locked.note(), actor, "NOTE_ARCHIVED");
         }
         return etag(locked.note(), locked.access(), actor);
@@ -121,7 +135,12 @@ public class NoteService {
 
     @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
     public NoteResponse addTag(UUID noteId, UUID actor, String ifMatch, AddTagRequest request) {
-        var locked = writable(noteId, actor, ifMatch, false);
+        return addTag(noteId, actor, ifMatch, request, null);
+    }
+
+    @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
+    public NoteResponse addTag(UUID noteId, UUID actor, String ifMatch, AddTagRequest request, String lockToken) {
+        var locked = writable(noteId, actor, ifMatch, false, lockToken);
         Note note = locked.note();
         String name = TagNames.require(request.name());
         var existing = tagCatalog.findByTeamIdAndNormalizedName(note.getTeamId(), name);
@@ -139,7 +158,12 @@ public class NoteService {
 
     @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
     public String removeTag(UUID noteId, UUID actor, String name, String ifMatch) {
-        var locked = writable(noteId, actor, ifMatch, false);
+        return removeTag(noteId, actor, name, ifMatch, null);
+    }
+
+    @Transactional(timeout = 15, isolation = Isolation.READ_COMMITTED)
+    public String removeTag(UUID noteId, UUID actor, String name, String ifMatch, String lockToken) {
+        var locked = writable(noteId, actor, ifMatch, false, lockToken);
         Note note = locked.note();
         var tag = tagCatalog.findByTeamIdAndNormalizedName(note.getTeamId(), TagNames.require(name));
         if (tag.isPresent()) {
@@ -160,25 +184,11 @@ public class NoteService {
         record(note, actor, action);
     }
 
-    private LockedNote writable(UUID noteId, UUID actor, String ifMatch, boolean allowArchived) {
-        var scope = notes.findScope(noteId).orElseThrow(ResourceNotFoundException::new);
-        if (!allowArchived && scope.getArchivedAt() != null) {
-            throw new ResourceNotFoundException();
-        }
-        var access = writeAccess.lock(scope.getNotebookId(), actor);
-        Note note;
-        try {
-            note = notes.findForModification(noteId).orElseThrow(ResourceNotFoundException::new);
-            entityManager.refresh(note, LockModeType.PESSIMISTIC_WRITE);
-        } catch (OptimisticLockingFailureException | OptimisticLockException exception) {
-            throw new NoteOperationException(NoteOperationException.Code.STALE_IF_MATCH);
-        }
-        if (!note.getNotebookId().equals(access.notebook().getId())
-                || (!allowArchived && note.getArchivedAt() != null)) {
-            throw new ResourceNotFoundException();
-        }
-        NoteEtags.require(etag(note, access, actor), ifMatch);
-        return new LockedNote(note, access);
+    private LockedNotes.State writable(UUID noteId, UUID actor, String ifMatch,
+            boolean allowArchived, String lockToken) {
+        var state = lockedNotes.require(noteId, actor, ifMatch, allowArchived);
+        locks.requireWrite(noteId, actor, lockToken);
+        return state;
     }
 
     private void change(Note note, UUID actor, String title, String content, boolean pinned) {
@@ -222,11 +232,4 @@ public class NoteService {
         activity.save(new ActivityLog(note.getTeamId(), actor, action, "note", note.getId()));
     }
 
-    /**
-     * Internal transaction-scoped state is never serialized.
-     *
-     * @author Carlos Scheidecker
-     */
-    private record LockedNote(Note note, NoteWriteAccess.Access access) {
-    }
 }

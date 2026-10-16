@@ -22,10 +22,10 @@ Acceptance: successful onboarding/authentication, invalid credentials/tokens rej
 Suggested manual commit subject: `feat: add authentication and team access control`.
 
 ## Phase 4 — Notebook and note vertical slice
-Current sub-increment: note-scoped tag management with normalization/canonical catalog reuse, a 20-tag bound, capped shared authorization, conditional writes and atomic history/activity. Notebook/sharing and note CRUD/pinning are complete; later collaboration/history APIs remain review-gated.
-Scope: notebook management/archive, note CRUD/archive, ETags/If-Match, pinning, tags, immutable snapshot creation, and transactional activity recording.
+Current sub-increment: optional five-minute database editing leases, with atomic acquisition/renewal/release, owner-token enforcement on every note/tag mutation, expiry/takeover and stale-token fencing. Notebook/sharing and note CRUD/pinning/tags are complete; later collaboration/history APIs remain review-gated.
+Scope: notebook management/archive, note CRUD/archive, ETags/If-Match, pinning, tags, optional editing leases, immutable snapshot creation, and transactional activity recording.
 Implement repositories/services/controllers together per feature and include concurrency/authorization tests. Record history/activity now so phase-4 operations are not lost before phase 5 exposes their read APIs.
-Acceptance: end-to-end note/tag workflows, viewer write denial, hidden archived data, canonical owner-team tag reuse, no-op/capacity semantics, concurrent tag/content writes, rollback without partial catalog/history/activity, and deterministic pagination.
+Acceptance: end-to-end note/tag/lease workflows, viewer write denial, hidden archived data, canonical owner-team tag reuse, no-op/capacity semantics, lease expiry/fencing, concurrent acquisition/content/revocation, rollback across JDBC/JPA without partial history/activity, and deterministic pagination.
 Suggested manual commit subject: `feat: implement notebooks notes and optimistic concurrency`.
 
 ## Phase 5 — Collaboration, history, and discovery

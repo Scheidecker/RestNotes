@@ -31,12 +31,37 @@ class NotebookMigrationUpgradeIT {
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM DATABASECHANGELOG", Integer.class)).isEqualTo(3);
             migrate(source, "schema.yml", null);
             migrate(source, "demo.yml", "demo");
-            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM DATABASECHANGELOG", Integer.class)).isEqualTo(4);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM DATABASECHANGELOG", Integer.class)).isEqualTo(5);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM note_locks", Integer.class)).isZero();
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM notebook_shares", Integer.class)).isZero();
             assertThat(jdbc.queryForObject("SELECT title FROM notebooks WHERE id = UUID_TO_BIN(?)",
                     String.class, "30000000-0000-4000-8000-000000000001")).isEqualTo("Preserved before upgrade");
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM users", Integer.class)).isEqualTo(2);
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM notes", Integer.class)).isEqualTo(2);
+        }
+    }
+
+    @Test
+    void preLeaseSchemaUpgradesWithoutResettingContentSharesOrExistingIdentities() throws Exception {
+        try (MySQLContainer mysql = new MySQLContainer(MySqlIntegrationSupport.MYSQL_IMAGE)
+                .withDatabaseName("RestNotes").withUsername("APIUser").withPassword(UUID.randomUUID().toString())) {
+            mysql.start();
+            var source = new DriverManagerDataSource(mysql.getJdbcUrl(), mysql.getUsername(), mysql.getPassword());
+            var jdbc = new JdbcTemplate(source);
+            migrate(source, "legacy-locks.yml", "demo");
+            jdbc.update("UPDATE notes SET title = 'Preserved tagged-era note' WHERE id = UUID_TO_BIN(?)",
+                    "40000000-0000-4000-8000-000000000001");
+            jdbc.update("INSERT INTO notebook_shares VALUES(UUID_TO_BIN(?), UUID_TO_BIN(?), 'EDITOR', "
+                    + "UTC_TIMESTAMP(6), UTC_TIMESTAMP(6))", "30000000-0000-4000-8000-000000000001",
+                    "20000000-0000-4000-8000-000000000002");
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM DATABASECHANGELOG", Integer.class)).isEqualTo(4);
+            migrate(source, "schema.yml", null);
+            migrate(source, "demo.yml", "demo");
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM DATABASECHANGELOG", Integer.class)).isEqualTo(5);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM note_locks", Integer.class)).isZero();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM notebook_shares", Integer.class)).isEqualTo(1);
+            assertThat(jdbc.queryForObject("SELECT title FROM notes WHERE id = UUID_TO_BIN(?)",
+                    String.class, "40000000-0000-4000-8000-000000000001")).isEqualTo("Preserved tagged-era note");
         }
     }
 

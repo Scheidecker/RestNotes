@@ -9,6 +9,9 @@ import com.scheideckerantunes.notes.note.CreateNoteRequest;
 import com.scheideckerantunes.notes.note.AddTagRequest;
 import com.scheideckerantunes.notes.note.TagRepository;
 import com.scheideckerantunes.notes.note.NoteEtags;
+import com.scheideckerantunes.notes.note.NoteLockService;
+import com.scheideckerantunes.notes.note.NoteLockStore;
+import com.scheideckerantunes.notes.note.NoteLockTokens;
 import com.scheideckerantunes.notes.note.NoteOperationException;
 import com.scheideckerantunes.notes.note.NoteRepository;
 import com.scheideckerantunes.notes.note.NoteService;
@@ -56,6 +59,10 @@ class NoteConcurrencyIT extends MySqlIntegrationSupport {
     private static final UUID RECIPIENT_TEAM = id(2, 2);
     @Autowired
     private NoteService service;
+    @Autowired
+    private NoteLockService leases;
+    @Autowired
+    private NoteLockStore leaseStore;
     @Autowired
     private NoteRepository notes;
     @Autowired
@@ -266,6 +273,149 @@ class NoteConcurrencyIT extends MySqlIntegrationSupport {
             assertThat(fixture.actionCount("NOTE_UNTAGGED")).isZero();
         }
     }
+    @Test
+    void competingAcquisitionsEvenByTheSameUserHaveOneWinner() throws Exception {
+        try (Fixture fixture = new Fixture()) {
+            String etag = fixture.tag(OWNER);
+            assertThat(race(
+                    () -> result(() -> leases.acquire(fixture.noteId, OWNER, etag, null)),
+                    () -> result(() -> leases.acquire(fixture.noteId, OWNER, etag, null))))
+                    .containsExactlyInAnyOrder(200, 423);
+            assertThat(notes.findById(fixture.noteId).orElseThrow().getVersion()).isZero();
+            assertThat(history.findLatestVersion(fixture.noteId)).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void acquisitionAndUnlockedEditSerializeWithoutBypassingTheLease() throws Exception {
+        try (Fixture fixture = new Fixture()) {
+            String etag = fixture.tag(OWNER);
+            var outcomes = race(
+                    () -> result(() -> leases.acquire(fixture.noteId, OWNER, etag, null)),
+                    () -> result(() -> service.patch(fixture.noteId, OWNER, etag, content("Concurrent edit"))));
+            if (outcomes.get(0) == 200) {
+                assertThat(outcomes.get(1)).isEqualTo(423);
+                assertThat(history.findLatestVersion(fixture.noteId)).isEqualTo(1);
+            } else {
+                assertThat(outcomes).containsExactly(412, 200);
+                assertThat(leaseStore.find(fixture.noteId)).isEmpty();
+                assertThat(history.findLatestVersion(fixture.noteId)).isEqualTo(2);
+            }
+        }
+    }
+
+    @Test
+    void expiredTakeoverHasOneWinnerAndFencesOldCredential() throws Exception {
+        try (Fixture fixture = new Fixture()) {
+            String etag = fixture.tag(OWNER);
+            String old = leases.acquire(fixture.noteId, OWNER, etag, null).response().token();
+            fixture.expireLease();
+            assertThat(race(
+                    () -> result(() -> leases.acquire(fixture.noteId, OWNER, etag, null)),
+                    () -> result(() -> leases.acquire(fixture.noteId, OWNER, etag, null))))
+                    .containsExactlyInAnyOrder(200, 423);
+            assertThat(NoteLockTokens.matches(old, leaseStore.find(fixture.noteId).orElseThrow().digest())).isFalse();
+            assertThatThrownBy(() -> leases.release(fixture.noteId, OWNER, etag, old))
+                    .hasMessage("STALE_LOCK_TOKEN");
+        }
+    }
+
+    @Test
+    void renewalAndReleaseNeverResurrectAReleasedGeneration() throws Exception {
+        try (Fixture fixture = new Fixture()) {
+            String etag = fixture.tag(OWNER);
+            String token = leases.acquire(fixture.noteId, OWNER, etag, null).response().token();
+            var outcomes = race(
+                    () -> result(() -> leases.acquire(fixture.noteId, OWNER, etag, token)),
+                    () -> result(() -> leases.release(fixture.noteId, OWNER, etag, token)));
+            assertThat(outcomes.get(0)).isIn(200, 409);
+            assertThat(outcomes.get(1)).isEqualTo(200);
+            assertThat(leaseStore.find(fixture.noteId)).isEmpty();
+        }
+    }
+
+    @Test
+    void grantRevocationSerializesWithLeaseRenewalAndCannotRetainWriteAuthority() throws Exception {
+        try (Fixture fixture = new Fixture()) {
+            fixture.share();
+            String etag = fixture.tag(RECIPIENT);
+            String bookTag = fixture.bookTag();
+            String token = leases.acquire(fixture.noteId, RECIPIENT, etag, null).response().token();
+            var outcomes = race(
+                    () -> result(() -> leases.acquire(fixture.noteId, RECIPIENT, etag, token)),
+                    () -> result(() -> notebooks.revoke(fixture.bookId, OWNER, RECIPIENT_TEAM, bookTag)));
+            assertThat(outcomes.get(0)).isIn(200, 404);
+            assertThat(outcomes.get(1)).isEqualTo(200);
+            assertThatThrownBy(() -> leases.release(fixture.noteId, RECIPIENT, etag, token))
+                    .isInstanceOf(ResourceNotFoundException.class);
+            assertThat(history.findLatestVersion(fixture.noteId)).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void membershipDowngradeSerializesWithLeaseRenewal() throws Exception {
+        try (Fixture fixture = new Fixture()) {
+            var member = fixture.user();
+            teams.addMember(RECIPIENT_TEAM, RECIPIENT, new AddTeamMemberRequest(member.getEmail(), TeamRole.EDITOR));
+            fixture.share();
+            String etag = fixture.tag(member.getId());
+            String token = leases.acquire(fixture.noteId, member.getId(), etag, null).response().token();
+            var outcomes = race(
+                    () -> result(() -> leases.acquire(fixture.noteId, member.getId(), etag, token)),
+                    () -> result(() -> teams.updateMember(RECIPIENT_TEAM, RECIPIENT, member.getId(),
+                            new UpdateTeamMemberRequest(TeamRole.VIEWER))));
+            assertThat(outcomes.get(0)).isIn(200, 403);
+            assertThat(outcomes.get(1)).isEqualTo(200);
+            assertThatThrownBy(() -> leases.release(fixture.noteId, member.getId(), etag, token))
+                    .isInstanceOf(AccessDeniedException.class);
+        }
+    }
+
+    @Test
+    void acquisitionRenewalAndReleaseRollBackWithTheirEnclosingTransaction() {
+        try (Fixture fixture = new Fixture()) {
+            String etag = fixture.tag(OWNER);
+            assertThatThrownBy(() -> transaction().executeWithoutResult(status -> {
+                leases.acquire(fixture.noteId, OWNER, etag, null);
+                throw new IllegalStateException("Abort fixture transaction");
+            })).isInstanceOf(IllegalStateException.class);
+            assertThat(leaseStore.find(fixture.noteId)).isEmpty();
+            String token = leases.acquire(fixture.noteId, OWNER, etag, null).response().token();
+            var original = leaseStore.find(fixture.noteId).orElseThrow();
+            assertThatThrownBy(() -> transaction().executeWithoutResult(status -> {
+                leases.acquire(fixture.noteId, OWNER, etag, token);
+                throw new IllegalStateException("Abort fixture transaction");
+            })).isInstanceOf(IllegalStateException.class);
+            assertThat(leaseStore.find(fixture.noteId).orElseThrow().expiresAt()).isEqualTo(original.expiresAt());
+            assertThatThrownBy(() -> transaction().executeWithoutResult(status -> {
+                leases.release(fixture.noteId, OWNER, etag, token);
+                throw new IllegalStateException("Abort fixture transaction");
+            })).isInstanceOf(IllegalStateException.class);
+            assertThat(leaseStore.find(fixture.noteId)).isPresent();
+        }
+    }
+
+    @Test
+    void holderContentAndArchiveRollbackRestoresBothJpaAndJdbcState() {
+        try (Fixture fixture = new Fixture()) {
+            String etag = fixture.tag(OWNER);
+            String token = leases.acquire(fixture.noteId, OWNER, etag, null).response().token();
+            assertThatThrownBy(() -> transaction().executeWithoutResult(status -> {
+                service.patch(fixture.noteId, OWNER, etag, content("Must roll back"), token);
+                throw new IllegalStateException("Abort fixture transaction");
+            })).isInstanceOf(IllegalStateException.class);
+            assertThatThrownBy(() -> transaction().executeWithoutResult(status -> {
+                service.archive(fixture.noteId, OWNER, etag, token);
+                throw new IllegalStateException("Abort fixture transaction");
+            })).isInstanceOf(IllegalStateException.class);
+            assertThat(leaseStore.find(fixture.noteId)).isPresent();
+            assertThat(notes.findById(fixture.noteId).orElseThrow().getArchivedAt()).isNull();
+            assertThat(fixture.tag(OWNER)).isEqualTo(etag);
+            assertThat(history.findLatestVersion(fixture.noteId)).isEqualTo(1);
+            assertThat(fixture.actionCount("NOTE_UPDATED")).isZero();
+            assertThat(fixture.actionCount("NOTE_ARCHIVED")).isZero();
+        }
+    }
 
     private TransactionTemplate transaction() {
         var template = new TransactionTemplate(transactions);
@@ -339,6 +489,11 @@ class NoteConcurrencyIT extends MySqlIntegrationSupport {
             notebooks.share(bookId, OWNER, bookTag(),
                     new NotebookShareRequest(RECIPIENT_TEAM, ShareAccessLevel.EDITOR));
         }
+        void expireLease() {
+            jdbc.update("UPDATE note_locks SET acquired_at = UTC_TIMESTAMP(6) - INTERVAL 10 MINUTE, "
+                    + "expires_at = UTC_TIMESTAMP(6) - INTERVAL 1 SECOND WHERE note_id = UUID_TO_BIN(?)",
+                    noteId.toString());
+        }
 
         UserAccount user() {
             var account = users.saveAndFlush(new UserAccount(UUID.randomUUID() + "@scheideckerantunes.com",
@@ -355,6 +510,7 @@ class NoteConcurrencyIT extends MySqlIntegrationSupport {
         @Override
         public void close() {
             transaction().executeWithoutResult(status -> {
+                jdbc.update("DELETE FROM note_locks WHERE note_id = UUID_TO_BIN(?)", noteId.toString());
                 jdbc.update("DELETE FROM note_history WHERE note_id = UUID_TO_BIN(?)", noteId.toString());
                 jdbc.update("DELETE FROM activity_logs WHERE entity_id IN (UUID_TO_BIN(?), UUID_TO_BIN(?))",
                         noteId.toString(), bookId.toString());

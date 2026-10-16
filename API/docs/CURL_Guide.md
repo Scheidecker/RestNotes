@@ -581,13 +581,94 @@ refresh_note_etag
 
 Expected: 204 with an advanced note ETag, one snapshot and NOTE_UNTAGGED activity. Repeating with the current validator is 204 with no further changes. The reusable catalog row is retained, including when no note currently uses it. Use the same encoding procedure for names with spaces, Unicode or hashes; never append raw `#` or double-encode a segment.
 
-Cleanup (the tag playground note remains available for inspection):
+Keep the fresh tag playground note and authentication variables for locking below.
+
+## Note locking
+Locks are optional five-minute editing leases. This walkthrough continues with the active tag playground note, not the archived CRUD note. Re-login if your bearer token expired.
+
+### 1. Read status — GET /api/v1/notes/{id}/lock
+
+```bash
+printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+  curl --fail-with-body --header @- "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock"
+refresh_note_etag
+```
+
+Expected: 200 with locked false and null ownerId/acquiredAt/expiresAt initially, or active metadata if another client acquired it. Any current reader can retrieve status; no token/digest is returned. All lease responses use Cache-Control no-store.
+
+### 2. Acquire — POST /api/v1/notes/{id}/lock
+Capture the secret without displaying the acquisition response:
+
+```bash
+RN_LOCK_TOKEN=$(
+  curl --silent --show-error --fail \
+    --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+    --request POST "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock" |
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])'
+)
+export RN_LOCK_TOKEN
+```
+
+Expected: 200 with ownerId/acquiredAt/expiresAt/token, and the unchanged note ETag. Only current EDITOR-or-higher users may acquire/renew/release. POST has no body; the actor comes from authentication, not client IDs. The server stores only a digest. Never print, log or commit RN_LOCK_TOKEN or put it in command-line literals.
+
+Until release/expiry, all note PUT/PATCH/archive and tag add/remove requests require both the authenticated holder and Note-Lock-Token, including no-op writes. Even a second client logged in as the same user cannot reacquire without the token:
+
+```bash
+curl --include --request POST \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock"
+curl --include --request PATCH \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+  --header 'Content-Type: application/json' --data '{"pinned":true}' \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+```
+
+Expected: 423 NOTE_LOCKED for both while the lease is active. Another authenticated user cannot bypass the lock even with its token; owner-team ADMIN has no force-unlock privilege.
+
+### 3. Edit and renew — POST /api/v1/notes/{id}/lock
+
+```bash
+curl --fail-with-body --request PATCH \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\nNote-Lock-Token: %s\n' \
+    "$RN_TOKEN" "$RN_NOTE_ETAG" "$RN_LOCK_TOKEN") \
+  --header 'Content-Type: application/json' --data '{"pinned":true}' \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+refresh_note_etag
+curl --fail-with-body --include --request POST \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\nNote-Lock-Token: %s\n' \
+    "$RN_TOKEN" "$RN_NOTE_ETAG" "$RN_LOCK_TOKEN") \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock"
+```
+
+Expected: 200 for edit and renewal. The real content/pinning edit advances the note ETag and history/activity normally; renewal does not. Renewal extends expiry five minutes from database UTC time and returns metadata without a token field. Keep the original RN_LOCK_TOKEN. Use the same header on tag mutations and note archive. Refetch note ETags after changes, including notebook metadata/permission changes; lock ownership does not exempt preconditions.
+
+### 4. Release — DELETE /api/v1/notes/{id}/lock
+
+```bash
+curl --fail-with-body --include --request DELETE \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\nNote-Lock-Token: %s\n' \
+    "$RN_TOKEN" "$RN_NOTE_ETAG" "$RN_LOCK_TOKEN") \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock"
+unset RN_LOCK_TOKEN
+curl --fail-with-body --include --request DELETE \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID/lock"
+```
+
+Expected: 204 for release, then tokenless no-op 204 while unlocked, with unchanged note ETag. Repeating with the old supplied token instead returns 409 STALE_LOCK_TOKEN. Unlocked notes need only current If-Match as before.
+
+Expiry is exclusive: expiresAt equal to database now is expired. After five minutes without renewal, GET reports unlocked and an editor can POST with current If-Match and no old token to acquire a fresh generation. Old supplied tokens receive 409 on writes/renewal/release and cannot release a replacement. Malformed/blank/multiple tokens are 400 INVALID_LOCK_TOKEN; missing/stale/invalid If-Match remain 428/412/400. Current access checks still run first.
+
+Revoked/downgraded holders cannot write, renew or release; remaining editors may wait up to five minutes for expiry. No scheduler, in-memory mutex, admin override or real-time presence feed is involved. Leases survive API restart in MySQL, but dev ephemeral JWTs require re-login. Holder note archive removes the lease transactionally; notebook archive hides all note/lock routes.
+
+Cleanup (the tag/lock playground note remains available for inspection):
 
 ```bash
 unset RN_TOKEN RN_RECIPIENT_TOKEN RN_EMAIL RN_FULL_NAME RN_TEAM_ID RN_CREATOR_ID RN_MEMBER_EMAIL RN_MEMBER_ID
 unset RN_NOTEBOOK_ID RN_NOTEBOOK_ETAG RN_STALE_NOTEBOOK_ETAG RN_SHARE_TEAM_ID
 unset RN_NOTE_ID RN_NOTE_ETAG RN_STALE_NOTE_ETAG RN_RECIPIENT_NOTE_ETAG
 unset RN_TAG_NAME RN_TAG_SEGMENT
+unset RN_LOCK_TOKEN
 unset -f refresh_notebook_etag refresh_note_etag
 ```
 
@@ -605,7 +686,7 @@ Run `curl --fail-with-body http://localhost:8081/v3/api-docs/swagger-config` for
 
 Run `curl --fail-with-body --location http://localhost:8081/swagger-ui.html` to follow the redirect to Swagger HTML (200). Direct assets are served under `/swagger-ui/`.
 
-These routes are disabled and denied in UAT/prod. In dev/test the definition includes identity/teams, notebooks/sharing and note CRUD/tag operations with bearerAuth security for protected endpoints.
+These routes are disabled and denied in UAT/prod. In dev/test the definition includes identity/teams, notebooks/sharing and note CRUD/tag/locking operations with bearerAuth security for protected endpoints.
 
 ## Verify fail-closed access
 Run `curl --include http://localhost:8081/actuator/env` (401).

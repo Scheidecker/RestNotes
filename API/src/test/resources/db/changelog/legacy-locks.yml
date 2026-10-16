@@ -1,0 +1,15 @@
+# Author: Carlos Scheidecker
+# Reproduce all applied identities before editing leases without rewriting their SQL.
+databaseChangeLog:
+  - include:
+      file: legacy-notebooks.yml
+      relativeToChangelogFile: true
+  - changeSet:
+      id: 004-notebook-sharing
+      author: Carlos Scheidecker
+      logicalFilePath: db/changelog/schema.yml
+      dbms: mysql
+      runInTransaction: false
+      changes:
+        - sqlFile:
+            path: classpath:db/changelog/sql/004-notebook-sharing.sql

@@ -66,8 +66,9 @@ public class NoteController {
     @Operation(summary = "Replace title/content/pinned; requires a current note If-Match")
     public ResponseEntity<NoteResponse> replace(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID noteId,
             @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @RequestHeader(value = NoteLockTokens.HEADER, required = false) String lockToken,
             @Valid @RequestBody ReplaceNoteRequest request) {
-        NoteResponse result = notes.replace(noteId, actor(jwt), ifMatch, request);
+        NoteResponse result = notes.replace(noteId, actor(jwt), ifMatch, request, lockToken);
         return ResponseEntity.ok().eTag(NoteEtags.from(result, actor(jwt))).body(result);
     }
 
@@ -75,32 +76,37 @@ public class NoteController {
     @Operation(summary = "Partially update title/content/pinned; explicit null is not allowed")
     public ResponseEntity<NoteResponse> patch(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID noteId,
             @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @RequestHeader(value = NoteLockTokens.HEADER, required = false) String lockToken,
             @Valid @RequestBody PatchNoteRequest request) {
-        NoteResponse result = notes.patch(noteId, actor(jwt), ifMatch, request);
+        NoteResponse result = notes.patch(noteId, actor(jwt), ifMatch, request, lockToken);
         return ResponseEntity.ok().eTag(NoteEtags.from(result, actor(jwt))).body(result);
     }
 
     @DeleteMapping("/notes/{noteId}")
     @Operation(summary = "Conditionally archive a note, preserving its content and history")
     public ResponseEntity<Void> archive(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID noteId,
-            @RequestHeader(value = "If-Match", required = false) String ifMatch) {
-        return ResponseEntity.noContent().eTag(notes.archive(noteId, actor(jwt), ifMatch)).build();
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @RequestHeader(value = NoteLockTokens.HEADER, required = false) String lockToken) {
+        return ResponseEntity.noContent().eTag(notes.archive(noteId, actor(jwt), ifMatch, lockToken)).build();
     }
 
     @PostMapping("/notes/{noteId}/tags")
     @Operation(summary = "Add/reuse one team-scoped tag; current note If-Match and EDITOR access required")
     public ResponseEntity<NoteResponse> addTag(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID noteId,
             @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @RequestHeader(value = NoteLockTokens.HEADER, required = false) String lockToken,
             @Valid @RequestBody AddTagRequest request) {
-        NoteResponse result = notes.addTag(noteId, actor(jwt), ifMatch, request);
+        NoteResponse result = notes.addTag(noteId, actor(jwt), ifMatch, request, lockToken);
         return ResponseEntity.ok().eTag(NoteEtags.from(result, actor(jwt))).body(result);
     }
 
     @DeleteMapping("/notes/{noteId}/tags/{tagName}")
     @Operation(summary = "Remove a tag association without deleting the reusable team catalog entry")
     public ResponseEntity<Void> removeTag(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID noteId,
-            @PathVariable String tagName, @RequestHeader(value = "If-Match", required = false) String ifMatch) {
-        return ResponseEntity.noContent().eTag(notes.removeTag(noteId, actor(jwt), tagName, ifMatch)).build();
+            @PathVariable String tagName, @RequestHeader(value = "If-Match", required = false) String ifMatch,
+            @RequestHeader(value = NoteLockTokens.HEADER, required = false) String lockToken) {
+        return ResponseEntity.noContent()
+                .eTag(notes.removeTag(noteId, actor(jwt), tagName, ifMatch, lockToken)).build();
     }
 
     private UUID actor(Jwt jwt) {

@@ -1,8 +1,8 @@
 # RestNotes API design
 Author: Carlos Scheidecker
 
-## Implemented: note CRUD and tags
-One Java 25 Spring Boot application, one Maven module, package `com.scheideckerantunes.notes`. Identity/teams, notebooks/sharing, note CRUD/pinning and note-scoped tag mutation are implemented. Comments, history/restore, search and activity REST remain unavailable.
+## Implemented: note CRUD, tags and editing leases
+One Java 25 Spring Boot application, one Maven module, package `com.scheideckerantunes.notes`. Identity/teams, notebooks/sharing, note CRUD/pinning, tags and optional editing leases are implemented. Comments, history/restore, search and activity REST remain unavailable.
 
 Health/probes/info, dev/test documentation, and POST register/login permit anonymous requests. Implemented profile/team/notebook/note routes require bearer authentication; other routes default-deny. Basic/form login and cookie sessions are disabled. CSRF is disabled for header-bearer authentication; revisit it if cookies are introduced. No cross-origin policy is enabled. Health hides components and Actuator exposure is not wildcarded.
 
@@ -71,6 +71,19 @@ At most 20 associations are allowed per note. Check capacity before creating a n
 
 Real association changes advance the note's normal JPA version/update timestamp/updater, preserve creator/title/content/pinning, and append a sorted tag-name history snapshot plus NOTE_TAGGED/NOTE_UNTAGGED activity in one transaction. Failures roll back the catalog/link, note version/attribution, snapshot and activity together. No schema migration is needed.
 
+## Note locking contract
+GET `/notes/{id}/lock` returns scalar locked/ownerId/acquiredAt/expiresAt for current readers; unlocked/expired status has null metadata. POST with current note If-Match and no Note-Lock-Token acquires an absent/expired lease for five minutes, returning 200 with metadata, a new secret token and the unchanged note ETag. POST with the active holder's token renews to five minutes from database time without returning the token again. DELETE with current note If-Match and holder token releases (204); tokenless release when unlocked/expired is an idempotent 204. All lease responses use Cache-Control no-store.
+
+While active, the lease requires both authenticated owner identity and Note-Lock-Token for PUT/PATCH/archive and tag add/remove, including content/tag no-ops. Same-user clients do not share ownership without the credential. Otherwise unlocked writes remain unchanged. ETags still protect content versions; acquiring/renewing/releasing changes neither note ETag/updater/timestamps nor history/activity. Lock state is separate from NoteResponse, so note/list representations do not change silently under an unchanged validator.
+
+Current editor access and note If-Match are checked before lease details. Existing 401/403/404 and 428/412/400 outcomes remain. An active lock without the holder's credential, or another actor even with that credential, returns 423 NOTE_LOCKED. A supplied valid-format token that does not match the current generation returns 409 STALE_LOCK_TOKEN; supplied expired tokens cannot renew, release replacements, or silently write unlocked. Malformed/blank/multiple/noncanonical tokens return 400 INVALID_LOCK_TOKEN. A missing token is distinct from a blank header.
+
+Migration 005 adds note_locks without modifying prior applied changesets. JDBC lease operations participate in the same Spring JPA transaction as note changes. The shared authorization helper locks sorted current access-path teams → notebook → note; the note mutex serializes missing-row acquisition, renewal, release, takeover and content writes across replicas. Database UTC time is queried after these locks, not before waiting or from a replica-local application clock. Expiry is exclusive: expiresAt equal to now is expired. No scheduled cleanup is needed; expired rows are replaced/removed lazily.
+
+Tokens contain 256 random bits, canonical unpadded base64url, transported only in the named header and the initial no-store acquisition response. Persist SHA-256 digests and compare verifiers in constant time. Never log tokens/digests or echo submitted values; token-bearing DTOs redact string output. Clients keep the initial token through renewal, refetch note ETags after content/ACL changes, and acquire a fresh generation without an old token only after expiry/release.
+
+Membership downgrade/revocation immediately prevents holder writes, renewal and release. The abandoned lease can block other editors until its deadline (at most five minutes); no force-unlock/admin override is provided. Owner-admin notebook archive remains available and hides note/lease routes. Holder note archive removes its lease in the same transaction; rollback restores both lease and note state. No locking of new-note creation, read exclusion, editing presence feed, WebSocket or real-time co-editing is implied.
+
 ## Persistence increment
 JPA/MySQL/Liquibase integration is implemented. Liquibase owns DDL; Hibernate validates it. Testcontainers runs the same MySQL image as Compose, not H2. Official image variables create the RestNotes database and APIUser on an empty volume; Liquibase does not connect as root or provision server users.
 
@@ -85,7 +98,7 @@ ADMIN manages notebooks and memberships; EDITOR modifies notes; VIEWER reads. Ad
 
 Use `/api/v1`, Markdown-only content, owning-team plus granted access, archive instead of destructive deletion, RFC 9457 errors and paginated DTOs. Note ETag/history/activity behavior is implemented; future restore must append history and reuse the same locked authorization/write contract.
 
-Public/individual ACLs, editing leases, rich-text JSON, email invites, mentions/notifications, refresh tokens and live co-editing remain deferred. Team-level cross-team notebook sharing is now implemented. Use optimistic concurrency and MySQL full-text search rather than more infrastructure.
+Public/individual ACLs, rich-text JSON, email invites, mentions/notifications, refresh tokens and live co-editing remain deferred. Team-level cross-team sharing and optional editing leases are implemented. Retain optimistic concurrency alongside leases, and use MySQL full-text search rather than more infrastructure.
 
 ## Dependencies and delivery
 Stable published baseline: Boot 4.1.1, Springdoc 3.1.1 and Maven 3.9.16. Boot controls Spring/Security/JWT library versions. Liquibase Community is explicitly overridden to 5.0.4 and verified with Boot/MySQL; Hibernate, JDBC and Testcontainers remain Boot-managed. The milestone repository is opt-in; no milestone dependency is used.
