@@ -73,6 +73,12 @@ public class SecurityConfiguration {
                             "/api/v1/notebooks/*", "/api/v1/notebooks/*/permissions").authenticated();
                     requests.requestMatchers(HttpMethod.DELETE,
                             "/api/v1/notebooks/*", "/api/v1/notebooks/*/permissions/*").authenticated();
+                    requests.requestMatchers(HttpMethod.POST, "/api/v1/notebooks/*/notes").authenticated();
+                    requests.requestMatchers(HttpMethod.GET,
+                            "/api/v1/notebooks/*/notes", "/api/v1/notes/*").authenticated();
+                    requests.requestMatchers(HttpMethod.PUT, "/api/v1/notes/*").authenticated();
+                    requests.requestMatchers(HttpMethod.PATCH, "/api/v1/notes/*").authenticated();
+                    requests.requestMatchers(HttpMethod.DELETE, "/api/v1/notes/*").authenticated();
                     requests.requestMatchers(
                             "/actuator/health", "/actuator/health/liveness",
                             "/actuator/health/readiness", "/actuator/info").permitAll();

@@ -1,12 +1,12 @@
 # RestNotes API design
 Author: Carlos Scheidecker
 
-## Implemented: notebooks and sharing
-One Java 25 Spring Boot application, one Maven module, package `com.scheideckerantunes.notes`. Identity/team administration and notebook management/sharing are implemented. Note CRUD and later collaboration controllers remain unavailable and denied.
+## Implemented: note CRUD
+One Java 25 Spring Boot application, one Maven module, package `com.scheideckerantunes.notes`. Identity/teams, notebooks/sharing and note CRUD/pinning are implemented. Tag mutation, comments, history/restore, search and activity REST remain unavailable.
 
-Health/probes/info, dev/test documentation, and POST register/login permit anonymous requests. Profile, team and implemented notebook routes require a validated bearer token; other routes default-deny. Basic/form login are disabled and requests are stateless. CSRF is disabled for header-bearer authentication; cookie authentication would require revisiting that choice. No cross-origin policy is enabled. Health omits component details and Actuator exposure is not wildcarded.
+Health/probes/info, dev/test documentation, and POST register/login permit anonymous requests. Implemented profile/team/notebook/note routes require bearer authentication; other routes default-deny. Basic/form login and cookie sessions are disabled. CSRF is disabled for header-bearer authentication; revisit it if cookies are introduced. No cross-origin policy is enabled. Health hides components and Actuator exposure is not wildcarded.
 
-UAT/prod disable documentation and registration by default and require non-demo DB credentials plus mounted persistent RSA keys, including mixed dev/prod profiles. Deployment-edge throttling, identity recovery and the remaining note workflows are not implemented; this increment must not be treated as a complete production service.
+UAT/prod disable documentation and registration by default and require non-demo DB credentials plus mounted persistent RSA keys, including mixed dev/prod profiles. Deployment-edge throttling, identity recovery and remaining collaboration workflows are not implemented; this increment must not be treated as a complete production service.
 
 ## Authentication contract
 `POST /api/v1/auth/register` accepts only email/password/fullName, normalizes identity, validates size/UTF-8 limits, persists BCrypt and returns a credential-free profile with 201. It creates no membership. Duplicate email races are decided by the database unique constraint and return 409. Unknown JSON fields are rejected rather than accepting privilege-related attributes.
@@ -45,7 +45,20 @@ Metadata/archive and permission changes require one strong If-Match. Detail/crea
 
 Write commands use READ_COMMITTED and lock teams before the notebook, refreshing current role/state and retaining the 15-second timeout. Grant/revoke commands lock owner and recipient teams in sorted UUID order to avoid reciprocal-share foreign-key deadlocks; missing recipients are reported only after authorization. The initial ownership lookup is a scalar projection, avoiding stale managed entity versions before locking and older MySQL repeatable-read refresh snapshots. Read-only transactions retain the datasource's default consistent snapshot behavior.
 
-DELETE archives, does not cascade-delete notes/history/grants, and hides metadata/permissions and note visibility from all normal paths. Repeating archive as an owner ADMIN with its returned current tag is 204; an old tag is 412. Revoking an absent grant with a current tag is 204. No unarchive/purge API exists. Note HTTP CRUD is not implemented; its future write authorization must enforce the same capped access model.
+DELETE archives, does not cascade-delete notes/history/grants, and hides metadata/permissions and note visibility from all normal paths. Repeating archive as an owner ADMIN with its returned current tag is 204; an old tag is 412. Revoking an absent grant with a current tag is 204. No unarchive/purge API exists.
+
+## Note CRUD contract
+POST/GET `/notebooks/{id}/notes` and GET/PUT/PATCH/DELETE `/notes/{id}` are implemented. Full notes include Markdown, pinning, immutable attribution, row/notebook versions, effective capability and at most 20 existing tag names. Collection DTOs are summaries without bodies/tags, ordered pinned-first then update-time descending/ID, bounded by page/size 0/20/max 100. There is no global GET `/notes` or note-moving operation.
+
+Create derives notebook/team/creator from the route and authenticated access. Title is trimmed/nonblank/max 255; content is required but may be empty, bounded to 262144 UTF-8 bytes. Pinning defaults false. PUT requires the complete mutable title/content/pinned representation. PATCH tracks field presence, leaves omitted fields unchanged, rejects explicit null and empty patches, and supports clearing content with an empty string. Tags remain read-only until their mutation increment.
+
+VIEWER can read. Owner ADMIN/EDITOR and appropriately capped external EDITOR paths can create/edit/archive; creator identity does not impose an additional owner-only restriction. Scalar scope lookups precede writes. Commands use READ_COMMITTED and lock sorted owning/candidate access-path teams, then notebook and note. Capabilities are re-read under those locks, so grant removal/member downgrade serialize with edits. A new qualifying path discovered after lock selection returns retry conflict ACCESS_CHANGED rather than authorizing through an unlocked team. This conservative per-notebook/team serialization is intentional for small teams.
+
+GET/create/changed responses return strong note ETags containing note version, notebook ID/version, caller and current role. PUT/PATCH/DELETE require one current note If-Match: missing 428, stale 412, malformed/weak/wildcard/multiple 400. Permission or notebook metadata changes can invalidate a note tag even when its row is unchanged; re-fetch before editing. Authorization is checked before conditional-write details, so revoked access is hidden as 404 or denied as 403 rather than leaked through version errors.
+
+Creation stores history snapshot 1; real title/content/pinning changes append immutable snapshots under the note lock, independently of the JPA row version. Snapshots preserve current sorted tag names. Data/version, history and activity commit/rollback together. No-op writes do not change updater/version or create history/activity. Archive changes attribution/version and adds NOTE_ARCHIVED activity, retains existing content/history/tags, and creates no redundant content snapshot. Archived notes/notebooks are hidden; repeating note archive with its returned current tag is 204 while the caller retains editor access and the notebook is active.
+
+Note request DTOs redact content/title in toString. Validation enforces 256 KiB UTF-8 content, and RequestBodyAdvice bounds JSON reads to 2 MiB regardless of Content-Length. Size violations are 413 with static details; application exception advice takes precedence over Boot's default validation handler. Full note bodies are never used in application logs or error details.
 
 ## Persistence increment
 JPA/MySQL/Liquibase integration is implemented. Liquibase owns DDL; Hibernate validates it. Testcontainers runs the same MySQL image as Compose, not H2. Official image variables create the RestNotes database and APIUser on an empty volume; Liquibase does not connect as root or provision server users.
@@ -55,11 +68,11 @@ The seed dataset contains Engineering and Marketing, each with its distinct admi
 An early configuration guard rejects root/unsafe protected credentials before connections. A Spring bean lifecycle hook selects the schema-only or explicit-demo Liquibase entry point before migration initialization, without replacing Boot auto-configuration or relying on private Boot customizer types. A direct demo changelog invocation without the required `@demo` runtime context cannot seed data. See [schema reference](Database-Schema-Reference.md).
 
 ## Planned business contracts
-Feature-oriented controllers/services/repositories stay in one deployment. Authentication and notes are separate concerns, not separate services. Team services and affiliations already authorize through current memberships rather than token roles; forthcoming note services must do the same.
+Feature-oriented controllers/services/repositories stay in one deployment. Authentication and notes are separate concerns, not separate services. Team/notebook/note services authorize through current memberships and grants rather than token roles.
 
 ADMIN manages notebooks and memberships; EDITOR modifies notes; VIEWER reads. Admin is team-scoped. Protect the last admin and authorize every nested-resource/query/count operation. Expose DTOs, not JPA entities. Registration never grants team access.
 
-Use `/api/v1`, Markdown-only content, owning-team plus explicitly granted notebook access, archive rather than destructive deletion, RFC 9457 errors, and paginated DTOs. Future note writes require ETag/If-Match, returning 428 when absent and 412 when stale. Note updates/history/activity will be transactional; restore appends history.
+Use `/api/v1`, Markdown-only content, owning-team plus granted access, archive instead of destructive deletion, RFC 9457 errors and paginated DTOs. Note ETag/history/activity behavior is implemented; future restore must append history and reuse the same locked authorization/write contract.
 
 Public/individual ACLs, editing leases, rich-text JSON, email invites, mentions/notifications, refresh tokens and live co-editing remain deferred. Team-level cross-team notebook sharing is now implemented. Use optimistic concurrency and MySQL full-text search rather than more infrastructure.
 

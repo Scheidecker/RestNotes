@@ -1,4 +1,4 @@
-# CURL guide — identity, teams, notebooks, sharing and operational endpoints
+# CURL guide — identity, teams, notebooks, sharing and note CRUD
 Author: Carlos Scheidecker
 
 Start the API using the [quick start](Quick_start.md). Examples below use Bash, curl and Python 3. Use HTTPS outside localhost, do not enable shell tracing (`set -x`), and never print tokens. Set the base URL once:
@@ -349,12 +349,160 @@ printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
 
 Expected: 204 with the archive's new ETag, followed by 404 on normal detail. Data, notes, history and grant rows are retained. Repeating archive with the returned current tag is 204; the old pre-archive tag is 412. Do not call refresh_notebook_etag after archive, because normal detail is now hidden. No unarchive/purge endpoint exists.
 
-When finished:
+Keep the owner/recipient tokens, team ID and refresh_notebook_etag function for the note walkthrough below. Re-login if a token expired.
+
+## Note CRUD
+The notebook above was archived. Create a fresh notebook in the same team, then grant the Marketing team EDITOR access again for the shared-edit demonstration:
+
+```bash
+RN_NOTEBOOK_ID=$(
+  python3 -c 'import json,os; print(json.dumps({
+      "teamId":os.environ["RN_TEAM_ID"], "title":"Note CRUD playground"}))' |
+    curl --silent --show-error --fail-with-body \
+      --header @<(printf 'Authorization: Bearer %s\n' "$RN_TOKEN") \
+      --header 'Content-Type: application/json' --data-binary @- "$RN_BASE_URL/api/v1/notebooks" |
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])'
+)
+export RN_NOTEBOOK_ID
+refresh_notebook_etag
+python3 -c 'import json,os; print(json.dumps({
+    "teamId":os.environ["RN_SHARE_TEAM_ID"], "accessLevel":"EDITOR"}))' |
+  curl --fail-with-body --request PATCH \
+    --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTEBOOK_ETAG") \
+    --header 'Content-Type: application/json' --data-binary @- \
+    "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID/permissions"
+refresh_notebook_etag
+```
+
+### 1. Create — POST /api/v1/notebooks/{id}/notes
+
+```bash
+RN_NOTE_ID=$(
+  curl --silent --show-error --fail-with-body \
+    --header @<(printf 'Authorization: Bearer %s\n' "$RN_TOKEN") \
+    --header 'Content-Type: application/json' \
+    --data '{"title":"Release tasks","content":"# Release tasks\n\n- Review the API\n- Prepare release"}' \
+    "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID/notes" |
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])'
+)
+export RN_NOTE_ID
+```
+
+Expected: 201 with Location `/api/v1/notes/{id}`, note ETag and a full representation. Title is nonblank/max 255; Markdown content is required but may be empty, bounded to 256 KiB UTF-8. Optional pinned defaults false. Server derives creator, updater, owning team and notebook; client-supplied IDs are rejected.
+
+Owner ADMIN/EDITOR and appropriately capped shared EDITOR paths may write. VIEWER may read only. A shared editor's new note still belongs to the notebook's owning team, while createdBy records that editor. Creation is not an idempotent operation; do not blindly retry POST after an uncertain network outcome.
+
+### 2. Read — GET /api/v1/notes/{id}
+
+```bash
+printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+  curl --fail-with-body --include --header @- "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+refresh_note_etag() {
+  RN_NOTE_ETAG=$(
+    printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+      curl --silent --show-error --fail-with-body --header @- --dump-header - --output /dev/null \
+        "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID" |
+      python3 -c 'import sys; headers=sys.stdin.read().splitlines()
+print(next(line.split(":",1)[1].strip() for line in headers if line.lower().startswith("etag:")))'
+  )
+  export RN_NOTE_ETAG
+}
+refresh_note_etag
+```
+
+Expected: 200 with Markdown, pinning, bounded existing tag names, attribution, note/notebook versions and effective accessLevel. The note's own ETag is required for its writes; a notebook ETag is not interchangeable.
+
+### 3. List summaries — GET /api/v1/notebooks/{id}/notes
+
+```bash
+printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+  curl --fail-with-body --header @- \
+    "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID/notes?page=0&size=20"
+```
+
+Expected: a paginated metadata envelope, pinned first then update-time descending/ID, maximum size 100. Summaries omit content/tags; retrieve a note for its full body and validator. Inaccessible/archived notebooks return 404 rather than an empty unauthorized page.
+
+### 4. Replace — PUT /api/v1/notes/{id}
+
+```bash
+RN_STALE_NOTE_ETAG=$RN_NOTE_ETAG
+export RN_STALE_NOTE_ETAG
+curl --fail-with-body --request PUT \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+  --header 'Content-Type: application/json' \
+  --data '{"title":"Release checklist","content":"# Checklist\n\n- Complete review","pinned":false}' \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+refresh_note_etag
+```
+
+Expected: 200 with a new note version/ETag. All three title/content/pinned fields are required. PUT preserves read-only tags, creator, notebook/team and creation time. A real change appends an immutable content/pinning/tag-name snapshot and activity in the same transaction; an identical representation is a no-op.
+
+### 5. Partial update — PATCH /api/v1/notes/{id}
+
+```bash
+curl --fail-with-body --request PATCH \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+  --header 'Content-Type: application/json' --data '{"pinned":true}' \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+refresh_note_etag
+```
+
+Expected: 200. Omitted fields are unchanged; explicit null and empty patches are 400. An empty content string clears Markdown. Repeating an unchanged patch creates no new history or activity.
+
+The shared Marketing admin must retrieve its own caller-scoped ETag before editing:
+
+```bash
+RN_RECIPIENT_NOTE_ETAG=$(
+  printf 'Authorization: Bearer %s\n' "$RN_RECIPIENT_TOKEN" |
+    curl --silent --show-error --fail-with-body --header @- --dump-header - --output /dev/null \
+      "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID" |
+    python3 -c 'import sys; headers=sys.stdin.read().splitlines()
+print(next(line.split(":",1)[1].strip() for line in headers if line.lower().startswith("etag:")))'
+)
+export RN_RECIPIENT_NOTE_ETAG
+curl --fail-with-body --request PATCH \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_RECIPIENT_TOKEN" "$RN_RECIPIENT_NOTE_ETAG") \
+  --header 'Content-Type: application/json' --data '{"content":"# Checklist\n\nShared review completed."}' \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+refresh_note_etag
+```
+
+Expected: 200 with accessLevel EDITOR and updatedBy pointing at Marketing's user, without changing the original creator. A recipient-team VIEWER would receive 403 despite an EDITOR share.
+
+Stale and missing validators do not modify the note:
+
+```bash
+curl --include --request PATCH \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_STALE_NOTE_ETAG") \
+  --header 'Content-Type: application/json' --data '{"pinned":false}' \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+  curl --include --request DELETE --header @- "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+```
+
+Expected: 412, then 428. Weak/wildcard/multiple tags are 400. Notebook metadata/permission version changes can invalidate a note tag even if note content did not change; re-fetch before retrying. Permission removal/downgrade is enforced first and returns 404/403. A rare new access path appearing during write lock selection returns retry conflict ACCESS_CHANGED (409) rather than granting unlocked permissions.
+
+### 6. Archive — DELETE /api/v1/notes/{id}
+
+```bash
+curl --fail-with-body --include --request DELETE \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTE_ETAG") \
+  "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+  curl --include --header @- "$RN_BASE_URL/api/v1/notes/$RN_NOTE_ID"
+```
+
+Expected: 204 with a new archive ETag, then 404. Content/tag/history rows remain; archive adds activity, not a duplicate unchanged content snapshot. Repeating archive with its returned current tag is 204 while the notebook is active and the caller remains an editor; an old tag is 412. Do not refresh_note_etag after archive because ordinary detail is hidden. No unarchive or hard-delete endpoint exists.
+
+Oversized Markdown or note JSON returns 413. The JSON body cap is 2 MiB, including chunked requests; the content cap is 256 KiB in UTF-8 bytes, not characters. Unknown fields and incomplete/invalid DTOs return sanitized 400 responses without echoing Markdown.
+
+Cleanup:
 
 ```bash
 unset RN_TOKEN RN_RECIPIENT_TOKEN RN_EMAIL RN_FULL_NAME RN_TEAM_ID RN_CREATOR_ID RN_MEMBER_EMAIL RN_MEMBER_ID
 unset RN_NOTEBOOK_ID RN_NOTEBOOK_ETAG RN_STALE_NOTEBOOK_ETAG RN_SHARE_TEAM_ID
-unset -f refresh_notebook_etag
+unset RN_NOTE_ID RN_NOTE_ETAG RN_STALE_NOTE_ETAG RN_RECIPIENT_NOTE_ETAG
+unset -f refresh_notebook_etag refresh_note_etag
 ```
 
 ## Health and application info
@@ -376,9 +524,9 @@ These routes are disabled and denied in UAT/prod. In dev/test the definition inc
 ## Verify fail-closed access
 Run `curl --include http://localhost:8081/actuator/env` (401).
 
-Run `curl --include http://localhost:8081/api/v1/notes` (401 anonymously; 403 with a valid token). This is a security-boundary check, not an implemented note listing.
+Run `curl --include http://localhost:8081/api/v1/notes` (401 anonymously; 403 with a valid token). There is no global note listing; use the paginated notebook-specific route.
 
 ## Persistence and remaining workflows
 The same operational endpoints now run with MySQL/Liquibase and JPA schema validation. Readiness includes database connectivity; health still hides component details.
 
-The [schema reference](Database-Schema-Reference.md#required-development-seed-dataset) lists the two admin users, sample identifiers and local-only demo password. Note CRUD, tags, comments, history/restore, search and activity HTTP operations remain unavailable. Their CURL workflows will be added alongside implementation rather than documenting nonexistent endpoints as working.
+The [schema reference](Database-Schema-Reference.md#required-development-seed-dataset) lists sample IDs and local-only credentials. Tag mutations, comments, history/restore, search and activity HTTP remain unavailable. Snapshots/activity are already recorded internally for CRUD, but their read/restore endpoints follow later.

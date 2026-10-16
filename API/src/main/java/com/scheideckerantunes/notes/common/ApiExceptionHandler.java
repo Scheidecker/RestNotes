@@ -4,12 +4,16 @@ import com.scheideckerantunes.notes.auth.DuplicateAccountException;
 import com.scheideckerantunes.notes.auth.RegistrationDisabledException;
 import com.scheideckerantunes.notes.team.TeamConflictException;
 import com.scheideckerantunes.notes.notebook.NotebookOperationException;
+import com.scheideckerantunes.notes.note.NoteOperationException;
+import com.scheideckerantunes.notes.note.NoteRequestBodyAdvice;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -28,6 +32,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * @author Carlos Scheidecker
  */
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
     @ExceptionHandler(DuplicateAccountException.class)
@@ -42,6 +47,14 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(NotebookOperationException.class)
     ProblemDetail notebook(NotebookOperationException exception, HttpServletRequest request) {
+        var code = exception.getCode();
+        ProblemDetail problem = ApiProblems.create(code.status(), code.detail(), request);
+        problem.setProperty("code", code.name());
+        return problem;
+    }
+
+    @ExceptionHandler(NoteOperationException.class)
+    ProblemDetail note(NoteOperationException exception, HttpServletRequest request) {
         var code = exception.getCode();
         ProblemDetail problem = ApiProblems.create(code.status(), code.detail(), request);
         problem.setProperty("code", code.name());
@@ -72,18 +85,32 @@ public class ApiExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    ProblemDetail validation(MethodArgumentNotValidException exception, HttpServletRequest request) {
+    ResponseEntity<ProblemDetail> validation(MethodArgumentNotValidException exception, HttpServletRequest request) {
+        if (exception.getBindingResult().getFieldErrors().stream()
+                .anyMatch(error -> "NoteContentSize".equals(error.getCode()))) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                    .body(note(new NoteOperationException(NoteOperationException.Code.CONTENT_TOO_LARGE), request));
+        }
         ProblemDetail problem = ApiProblems.create(HttpStatus.BAD_REQUEST, "Request validation failed", request);
         List<FieldError> errors = exception.getBindingResult().getFieldErrors().stream()
                 .map(error -> new FieldError(error.getField(), error.getDefaultMessage())).toList();
         problem.setProperty("errors", errors);
-        return problem;
+        return ResponseEntity.badRequest().body(problem);
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
             HandlerMethodValidationException.class, ConstraintViolationException.class})
-    ProblemDetail malformed(HttpServletRequest request) {
-        return ApiProblems.create(HttpStatus.BAD_REQUEST, "Invalid request body or parameters", request);
+    ResponseEntity<ProblemDetail> malformed(Exception exception, HttpServletRequest request) {
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof NoteRequestBodyAdvice.BodyLimitException) {
+                return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                        .body(note(new NoteOperationException(NoteOperationException.Code.BODY_TOO_LARGE), request));
+            }
+            cause = cause.getCause();
+        }
+        return ResponseEntity.badRequest()
+                .body(ApiProblems.create(HttpStatus.BAD_REQUEST, "Invalid request body or parameters", request));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

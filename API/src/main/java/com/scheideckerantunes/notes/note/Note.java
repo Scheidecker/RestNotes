@@ -6,6 +6,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.Objects;
+import java.time.temporal.ChronoUnit;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -50,22 +52,45 @@ public class Note extends VersionedEntity {
     }
 
     public Note(UUID notebookId, UUID teamId, String title, String content, UUID authorId) {
+        this(notebookId, teamId, title, content, false, authorId);
+    }
+
+    public Note(UUID notebookId, UUID teamId, String title, String content, boolean pinned, UUID authorId) {
         this.notebookId = notebookId;
         this.teamId = teamId;
         this.title = title;
         this.content = content;
+        this.pinned = pinned;
         createdBy = authorId;
         updatedBy = authorId;
     }
 
     public void replaceContent(String title, String content, UUID editorId) {
-        this.title = title;
-        this.content = content;
-        updatedBy = editorId;
+        applyChanges(title, content, pinned, editorId);
     }
 
     public void archive(Instant at) {
-        archivedAt = at;
+        archive(at, updatedBy);
+    }
+
+    public boolean applyChanges(String title, String content, boolean pinned, UUID editorId) {
+        if (Objects.equals(this.title, title) && Objects.equals(this.content, content) && this.pinned == pinned) {
+            return false;
+        }
+        this.title = title;
+        this.content = content;
+        this.pinned = pinned;
+        updatedBy = editorId;
+        return true;
+    }
+
+    public boolean archive(Instant at, UUID editorId) {
+        if (archivedAt != null) {
+            return false;
+        }
+        archivedAt = at.truncatedTo(ChronoUnit.MICROS);
+        updatedBy = editorId;
+        return true;
     }
 
     public UUID getNotebookId() {

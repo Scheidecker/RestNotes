@@ -78,7 +78,7 @@ info:
   app:
     name: RestNotes
     author: Carlos Scheidecker
-    phase: notebooks-and-sharing
+    phase: note-crud
 
 restnotes:
   demo:

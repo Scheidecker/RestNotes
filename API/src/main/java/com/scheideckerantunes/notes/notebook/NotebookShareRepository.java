@@ -26,6 +26,12 @@ public interface NotebookShareRepository extends JpaRepository<NotebookShare, No
             + "where s.id.notebookId in :notebookIds and m.id.userId = :userId")
     List<NotebookGrant> findCurrentGrants(Collection<UUID> notebookIds, UUID userId);
 
+    @Query("select new com.scheideckerantunes.notes.notebook.NotebookAccessPath("
+            + "s.id.sharedWithTeamId, s.accessLevel, m.role) from NotebookShare s "
+            + "join TeamMember m on m.id.teamId = s.id.sharedWithTeamId "
+            + "where s.id.notebookId = :notebookId and m.id.userId = :userId")
+    List<NotebookAccessPath> findCurrentPaths(UUID notebookId, UUID userId);
+
     @Query("select new com.scheideckerantunes.notes.notebook.NotebookPermission("
             + "t.id, t.name, s.accessLevel, s.sharedAt, s.updatedAt) from NotebookShare s "
             + "join Team t on t.id = s.id.sharedWithTeamId where s.id.notebookId = :notebookId order by t.name, t.id")

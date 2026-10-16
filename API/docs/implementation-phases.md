@@ -22,7 +22,7 @@ Acceptance: successful onboarding/authentication, invalid credentials/tokens rej
 Suggested manual commit subject: `feat: add authentication and team access control`.
 
 ## Phase 4 — Notebook and note vertical slice
-Current sub-increment: notebook management and explicitly restored cross-team sharing, with VIEWER/EDITOR grants capped by membership roles and owner-ADMIN-only administration. Note CRUD remains review-gated.
+Current sub-increment: note CRUD/pinning with capped shared authorization, conditional writes and atomic history/activity. Notebook/sharing is complete; tag mutation REST and later collaboration/history APIs remain review-gated.
 Scope: notebook management/archive, note CRUD/archive, ETags/If-Match, pinning, tags, immutable snapshot creation, and transactional activity recording.
 Implement repositories/services/controllers together per feature and include concurrency/authorization tests. Record history/activity now so phase-4 operations are not lost before phase 5 exposes their read APIs.
 Acceptance: end-to-end note workflows, viewer write denial, hidden archived data, failed stale writes without partial history/activity, and deterministic pagination.

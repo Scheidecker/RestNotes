@@ -30,7 +30,9 @@ All timestamps use UTC DATETIME(6) and application-assigned microsecond Instants
 
 Notebook shares are team-level VIEWER/EDITOR only with restrictive foreign keys and a recipient lookup index. Grant writes also advance the owning notebook's JPA version/update timestamp and record activity atomically. Archiving retains share/note/history rows but removes access through all ordinary queries. Current membership and grant checks happen before pagination/counting; strongest access paths combine without duplicate results.
 
-Composite foreign keys enforce notebook/note ownership and same-team note/tag links. Deletion is restricted rather than cascading away history; notebook archival is implemented while note HTTP archival remains pending. Hibernate validates schema and never creates/updates it.
+Composite foreign keys enforce notebook/note ownership and same-team note/tag links. Deletion is restricted; notebooks and notes archive without cascading away history. Hibernate validates schema and never creates/updates it.
+
+Note CRUD needs no schema migration. Initial snapshots use version_number 1; real title/content/pinning changes allocate max(version_number)+1 under the note row lock, not from the JPA version. No-op/failed writes add nothing. Archive changes the row version and activity but does not duplicate a content snapshot. Existing tag associations/names are preserved and bounded to 20 in responses/snapshots.
 
 Indexes support user-to-team membership, notebook/team discovery, note lists, comments by time, history versions and activity by time. FULLTEXT covers note title/content. MySQL token length, stopwords and collation affect matching; this is not arbitrary substring search. Team-aware search is implemented later.
 
@@ -41,7 +43,7 @@ The dataset has exactly two teams/admin users/memberships/notebooks/notes, and o
 - Marketing admin: `marketing.admin@scheideckerantunes.com`.
 - Demo initial password: `RestNotesDemo#8`.
 
-The password above is a public, local-demo value, stored only as BCrypt hashes in seed SQL. Never reuse these accounts or passwords in shared/cloud environments. Login and profile/team-affiliation APIs are now available; note workflows follow later. Do not confuse these application identities with the APIUser database account.
+The password above is a public, local-demo value, stored only as BCrypt hashes in seed SQL. Never reuse these accounts or passwords in shared/cloud environments. Login, team/notebook administration and note CRUD are available. Do not confuse application identities with the APIUser database account.
 
 Deterministic UUID convention: final digit 1 is Engineering, 2 is Marketing:
 - Users: `10000000-0000-4000-8000-000000000001` and `10000000-0000-4000-8000-000000000002`.

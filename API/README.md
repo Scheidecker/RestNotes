@@ -1,7 +1,7 @@
 # RestNotes
 Author: Carlos Scheidecker
 
-Spring Boot REST API for small-team notes. **Notebook/sharing increment:** identity/team administration now includes notebook management and explicitly approved cross-team VIEWER/EDITOR grants. Note CRUD and later collaboration workflows remain unavailable pending further review.
+Spring Boot REST API for small-team notes. **Note CRUD increment:** identity/teams, notebook sharing and Markdown note creation/listing/retrieval/updates/archive are implemented, including pinning and atomic history snapshots. Tag mutation, comments and later collaboration/history REST workflows remain review-gated.
 
 ## Stack
 Java 25, Maven Wrapper 3.9.16, Spring Boot 4.1.1, Springdoc 3.1.1, Spring MVC, Validation, Security and Actuator. Spring dependency versions come from the Boot parent. The optional `spring-milestones` Maven profile declares the requested milestone repository with snapshots disabled; normal builds use Central.
@@ -67,6 +67,18 @@ Notebook PATCH/DELETE and grant mutations require one current strong If-Match: m
 
 Sharing grants only VIEWER/EDITOR and caps each path by the recipient's current membership role. The strongest legitimate path wins when a user belongs to multiple teams. Shared access never grants notebook administration or membership in the owning team. Archived resources are hidden through all paths. Read the [notebook walkthrough](docs/CURL_Guide.md#notebooks-and-cross-team-sharing) before editing permissions.
 
+Note endpoints:
+- `POST /api/v1/notebooks/{id}/notes`: create with title/content and optional pinned (default false).
+- `GET /api/v1/notebooks/{id}/notes?page=0&size=20`: visible summaries, pinned first then update-time/ID; no Markdown bodies.
+- `GET /api/v1/notes/{id}`: full note, bounded existing tag names, capability and ETag.
+- `PUT /api/v1/notes/{id}`: replace required title/content/pinned; preserve read-only tag associations.
+- `PATCH /api/v1/notes/{id}`: partially update those fields; omission is unchanged, explicit null is rejected.
+- `DELETE /api/v1/notes/{id}`: conditionally archive without physical deletion.
+
+Note writes require current EDITOR-or-higher access (including capped shared grants). PUT/PATCH/DELETE require a current note If-Match. Note ETags include both note/notebook versions, caller and role; a notebook metadata/permission change invalidates old note validators too. Missing precondition is 428, stale is 412, malformed/weak/wildcard/multiple validators are 400.
+
+Markdown content may be empty but is limited to 256 KiB UTF-8; note JSON bodies are limited to 2 MiB, including streamed/chunked requests. Oversized input returns 413. Titles are trimmed/nonblank and at most 255 characters. Create/change writes atomically save immutable history plus activity; no-op updates do neither. Archive records activity without duplicating an unchanged content snapshot. See the [note walkthrough](docs/CURL_Guide.md#note-crud).
+
 ## Configuration
 All Spring configuration is in `src/main/resources/application.yml`.
 - SERVER_PORT: 8081, then platform PORT as fallback for a host-run JVM. In Compose, SERVER_PORT controls the host port; the container listens on 8081.
@@ -104,14 +116,14 @@ Never store real secrets in Git, logs, images or command-line literals. `.env.ex
 - `./mvnw checkstyle:check`: source style checks.
 - `docker compose config --quiet`: validate container configuration without rendering values.
 
-Tests cover identity/team authorization, notebook lifecycle, capped/multiple sharing paths, revocation/archive, conditional-write races, transaction rollback and an already-initialized database upgrade, plus earlier persistence/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
+Tests cover identity/team authorization, notebooks/sharing, note CRUD, byte/body limits, null/omission behavior, content snapshots, no-ops, concurrent edits/revocations/downgrades and transactional rollback, plus prior migration/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
 
 ## Required demo data — Phase 2
 Liquibase pre-populates exactly two isolated teams when demo mode is explicitly enabled:
 - Engineering: `engineering.admin@scheideckerantunes.com`, ADMIN, one notebook and one note authored by this admin.
 - Marketing: `marketing.admin@scheideckerantunes.com`, ADMIN, one notebook and one note authored by this admin.
 
-Each sample note has an initial history snapshot and activity entry. Demo changesets do not duplicate/reset records on restart. See the [schema reference](docs/Database-Schema-Reference.md#required-development-seed-dataset) for identifiers and local-only credentials. No cross-team grants are seeded: the two teams start isolated until an owner ADMIN explicitly shares a notebook. Note HTTP endpoints are not implemented yet.
+Each sample note has an initial history snapshot and activity entry. Demo changesets do not duplicate/reset records on restart. See the [schema reference](docs/Database-Schema-Reference.md#required-development-seed-dataset) for identifiers and local-only credentials. The two teams start isolated until an owner ADMIN explicitly shares a notebook. Seeded notes can now be read/edited using the note endpoints.
 
 ## Documentation
 - [API design](docs/API.Design.md)
@@ -126,7 +138,7 @@ Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deploymen
 1. Foundation — completed.
 2. Persistence, Liquibase and demo fixtures — completed.
 3. Identity, teams and role enforcement — completed in this increment.
-4. Notebooks/sharing — this increment; note CRUD, tags and history snapshots still pending.
+4. Notebook/sharing and note CRUD/pinning/snapshots — implemented; tag mutation REST still pending.
 5. Comments, history restore, search and activity.
 6. Release validation and complete deployment/usage manuals.
 

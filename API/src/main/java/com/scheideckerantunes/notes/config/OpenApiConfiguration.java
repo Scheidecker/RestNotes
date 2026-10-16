@@ -23,7 +23,7 @@ public class OpenApiConfiguration {
                 .info(new Info()
                 .title("RestNotes")
                 .version("v1")
-                .description("Identity, team administration, notebook management and cross-team sharing APIs.")
+                .description("Identity, teams, notebook sharing and conditional Markdown note CRUD APIs.")
                 .contact(new Contact().name("Carlos Scheidecker")));
     }
 }
