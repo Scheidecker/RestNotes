@@ -24,4 +24,7 @@ Run `curl --include http://localhost:8081/actuator/env` (401).
 
 Run `curl --include http://localhost:8081/api/v1/notes` (401). This is a security-boundary check, not an implemented note listing.
 
-Registration, JWT login, seeded data, and all note/team workflows will be documented with working examples as their implementation phases land. No usable token or demo password exists in Phase 1.
+## Phase 2 persistence
+The same operational endpoints now run with MySQL/Liquibase and JPA schema validation. Readiness includes database connectivity; health still hides component details.
+
+The [schema reference](Database-Schema-Reference.md#required-development-seed-dataset) lists the two pre-populated admin users, deterministic sample identifiers and local-only demo password. The accounts and data exist in MySQL, but registration/JWT login is Phase 3 and note/team workflows follow later. No usable API token exists yet. Working login and business CURL examples will be added with those endpoints.

@@ -1,0 +1,19 @@
+# Author: Carlos Scheidecker
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-restnotes-schema
+      author: Carlos Scheidecker
+      dbms: mysql
+      runInTransaction: false
+      changes:
+        - sqlFile:
+            path: sql/001-schema.sql
+            relativeToChangelogFile: true
+  - changeSet:
+      id: 002-note-fulltext-index
+      author: Carlos Scheidecker
+      dbms: mysql
+      runInTransaction: false
+      changes:
+        - sql:
+            sql: CREATE FULLTEXT INDEX idx_notes_fulltext ON notes(title, content)

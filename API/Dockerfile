@@ -7,7 +7,8 @@ COPY .mvn/ .mvn/
 COPY mvnw pom.xml checkstyle.xml ./
 RUN chmod +x mvnw
 COPY src/ src/
-RUN ./mvnw --batch-mode --no-transfer-progress verify
+# Real MySQL integration tests run on the host; do not mount Docker into the builder.
+RUN ./mvnw --batch-mode --no-transfer-progress verify -DskipITs
 
 FROM eclipse-temurin:25-jre-noble@sha256:d9a39a23634650173f1e2bbc176227af9728587ecf0f4b62d53e9355cd7a19ab
 LABEL org.opencontainers.image.title="RestNotes" \

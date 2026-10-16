@@ -1,0 +1,15 @@
+# Author: Carlos Scheidecker
+databaseChangeLog:
+  - include:
+      file: schema.yml
+      relativeToChangelogFile: true
+  - changeSet:
+      id: 003-development-demo-data
+      author: Carlos Scheidecker
+      dbms: mysql
+      contextFilter: "@demo"
+      runInTransaction: true
+      changes:
+        - sqlFile:
+            path: sql/003-demo.sql
+            relativeToChangelogFile: true

@@ -17,10 +17,10 @@ import org.springframework.test.web.servlet.MockMvc;
  *
  * @author Carlos Scheidecker
  */
-@SpringBootTest
+@SpringBootTest(properties = {"spring.liquibase.enabled=true", "restnotes.demo.enabled=false"})
 @AutoConfigureMockMvc
 @ActiveProfiles({"dev", "prod"})
-class ProductionSurfaceTest {
+class ProductionSurfaceIT extends MySqlIntegrationSupport {
 
     @Autowired
     private MockMvc mvc;

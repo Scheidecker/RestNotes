@@ -1,24 +1,28 @@
 # RestNotes
 Author: Carlos Scheidecker
 
-Spring Boot REST API for small-team notes. **Phase 1 foundation only:** the application starts, exposes operational endpoints and development OpenAPI/Swagger UI, and denies all business requests. Registration, JWT login, database integration and pre-populated data are not implemented yet.
+Spring Boot REST API for small-team notes. **Phase 2 persistence:** MySQL, Liquibase, JPA models/repositories and the required two-team demo data are implemented. Operational endpoints and development OpenAPI/Swagger UI work; all business requests remain denied until their implementation phases.
 
 ## Stack
 Java 25, Maven Wrapper 3.9.16, Spring Boot 4.1.1, Springdoc 3.1.1, Spring MVC, Validation, Security and Actuator. Spring dependency versions come from the Boot parent. The optional `spring-milestones` Maven profile declares the requested milestone repository with snapshots disabled; normal builds use Central.
 
-Persistence dependencies (Data JPA, MySQL and Liquibase), migrations and Testcontainers are added together in Phase 2 rather than disabling auto-configuration in an otherwise empty application. JWT authentication follows in Phase 3.
+Persistence uses Data JPA, MySQL 8.4.11, Liquibase Community 5.0.4 and Testcontainers 2.0.5. The deliberate Liquibase override of Boot's 5.0.3 has passed the real-MySQL migration/integration suite. JWT authentication follows in Phase 3.
 
 ## Run locally
-Prerequisites: JDK 25 and unzip (or Expand-Archive on Windows); first build requires network access to Maven Central. No database is needed in this phase. The wrapper pins the Maven ZIP SHA-256, so unzip is required on Unix to avoid its alternate tar.gz download path.
+Prerequisites: JDK 25 and unzip (or Expand-Archive on Windows); first build requires network access to Maven Central. The wrapper pins the Maven ZIP SHA-256, so unzip is required on Unix.
 
-Run `./mvnw spring-boot:run` from the API directory. The default profile is dev and the port is 8081. Alternatively use `./mvnw verify` then `java -jar target/restnotes.jar`.
+The easiest supported path is the two-service Compose startup below. A host-run JVM needs an existing MySQL RestNotes database reachable using DB_URL, DB_USERNAME and DB_PASSWORD. Defaults are localhost:3306/RestNotes and the request's development APIUser credentials. Compose intentionally does not publish MySQL to the host; use an explicit loopback-only port override if host-run development is needed.
+
+With that database available, run `./mvnw spring-boot:run` from the API directory. The default profile is dev and the port is 8081. Host-run dev applies schema migrations but loads demo data only when DEMO_DATA_ENABLED=true. Alternatively run `./mvnw verify` then `java -jar target/restnotes.jar`.
 
 ## Run with Docker Compose
-Prerequisites: Docker Engine with Compose. From this directory run `docker compose up --build --wait`. The build runs tests and static checks. API publishing is loopback-only at http://localhost:8081.
+Prerequisites: Docker Engine with Compose. From this directory run `docker compose up --build --wait`. It starts MySQL, waits until APIUser can query RestNotes, then starts the API, applies migrations, validates JPA mappings and loads demo data. API publishing is loopback-only at http://localhost:8081; MySQL stays on the internal network.
+
+The image builder runs unit tests and static checks, but skips Docker-backed integration tests because a Docker daemon is not mounted into the build. Run `./mvnw verify` on the host for the full MySQL-backed suite.
 
 Use `docker compose logs api` to inspect logs and `docker compose down` to stop the containers. Do not add volume deletion flags for a routine shutdown.
 
-The optional `database` Compose profile reserves MySQL configuration for Phase 2. It is not started by default or connected to the API yet. Supply nonempty DB_PASSWORD and MYSQL_ROOT_PASSWORD securely before enabling that profile; never use empty-password options. No root credentials are passed to the API. MySQL initialization variables affect only an empty data directory; a named volume preserves data across restarts.
+The Compose file uses the supplied fixed database/root credentials only as local development defaults. No root credentials are passed to the API. MySQL initialization variables affect only an empty data directory; changing them does not rotate credentials in an existing volume. Data survives both restart and ordinary `docker compose down` followed by startup. Never delete the volume as a routine troubleshooting step.
 
 ## Available endpoints
 - http://localhost:8081/actuator/health
@@ -37,33 +41,43 @@ All Spring configuration is in `src/main/resources/application.yml`.
 - LOG_LEVEL: INFO.
 - OPENAPI_ENABLED: true in dev/test; UAT/prod keep docs disabled.
 
-Production database/JWT secret validation will be introduced when those features exist; Phase 1 does not accept or consume those credentials. Never store real secrets in Git, logs, images or command-line literals. `.env.example` contains names only; local `.env` files and key files are ignored.
+Additional persistence settings:
+- DB_URL: `jdbc:mysql://localhost:3306/RestNotes`; Compose uses `mysql:3306/RestNotes`.
+- DB_USERNAME / DB_PASSWORD: supplied APIUser development defaults in dev/test only; required non-demo credentials in UAT/prod.
+- DB_POOL_SIZE / DB_CONNECTION_TIMEOUT_MS: 10 / 10000.
+- DEMO_DATA_ENABLED: false by default; local Compose explicitly defaults it to true.
+- MIGRATIONS_ENABLED: true in dev/test; false in UAT/prod. Use a schema-only deployment migration identity before starting protected environments.
+
+The API refuses root connections in all profiles, and UAT/prod reject missing/blank/known demo credentials and demo seeding before datasource initialization. Production JWT safeguards arrive with Phase 3. This increment is not production-ready.
+
+Never store real secrets in Git, logs, images or command-line literals. `.env.example` documents variable names; local `.env` files and key files are ignored. Do not print `docker compose config` or container environment values when real credentials are configured; use `config --quiet` for syntax validation.
 
 ## Validation
-- `./mvnw test`: Checkstyle and foundation/MVC security tests.
-- `./mvnw verify`: full current suite, real-HTTP integration smoke test, and executable jar.
+- `./mvnw test`: Checkstyle and database-independent domain/configuration safety tests.
+- `./mvnw verify`: unit tests plus MySQL-backed migrations/repositories/MVC/real-HTTP tests and executable jar. Docker is required and integration tests are not silently skipped.
 - `./mvnw checkstyle:check`: source style checks.
 - `docker compose config --quiet`: validate container configuration without rendering values.
 
-Tests currently cover safe health/info, both health probes, dev JSON/YAML OpenAPI and Swagger assets, sensitive endpoint denial, and production documentation restrictions. A Failsafe integration smoke test also exercises the embedded HTTP server on a random port. MySQL-backed integration and concurrency suites are Phase 2 onward; H2 is not planned.
+Tests cover safe operational/docs access, restricted production docs, clean schema, explicit demo contexts, repeat startup, preserved edits, seed graph, BCrypt hashes, binary UUIDs, UTC precision, tenant-aware pagination, cross-team foreign keys, history uniqueness, role/email constraints and stale writes. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
 
 ## Required demo data — Phase 2
-Liquibase will pre-populate exactly two isolated teams:
+Liquibase pre-populates exactly two isolated teams when demo mode is explicitly enabled:
 - Engineering: `engineering.admin@scheideckerantunes.com`, ADMIN, one notebook and one note authored by this admin.
 - Marketing: `marketing.admin@scheideckerantunes.com`, ADMIN, one notebook and one note authored by this admin.
 
-Each sample note will have an initial history snapshot and activity entry. Demo changesets will be explicitly development-only, will not duplicate records on restart, and will never load in production. Demo logins become usable with Phase 3 authentication.
+Each sample note has an initial history snapshot and activity entry. Demo changesets are development/test-only and do not duplicate or reset records on restart. See the [schema reference](docs/Database-Schema-Reference.md#required-development-seed-dataset) for deterministic identifiers and the public local-only demo password. These accounts cannot authenticate until Phase 3.
 
 ## Documentation
 - [API design](docs/API.Design.md)
+- [Database schema reference](docs/Database-Schema-Reference.md)
 - [Quick start](docs/Quick_start.md)
 - [CURL guide for currently implemented operations](docs/CURL_Guide.md)
 
-Planned manuals, to be linked when authored: `Database-Schema-Reference.md`, `GCP_Deployment.md`, `AWS_Deployment.md`, `Step-by-step-usage-manual.md`, and `SYSTEM_MANUAL.md` under docs/. PlantUML component, class and sequence sources and rendered SVGs will live under docs/diagrams/ as the domain is implemented.
+Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deployment.md`, `Step-by-step-usage-manual.md`, and `SYSTEM_MANUAL.md` under docs/. PlantUML component, class and sequence sources and rendered SVGs will live under docs/diagrams/ as the domain is implemented.
 
 ## Review gates
-1. Foundation — this increment.
-2. Persistence, Liquibase and demo fixtures.
+1. Foundation — completed.
+2. Persistence, Liquibase and demo fixtures — this increment.
 3. Identity, teams and role enforcement.
 4. Notebooks/notes, tags, archive and concurrency.
 5. Comments, history restore, search and activity.

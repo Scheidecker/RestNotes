@@ -19,7 +19,7 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-class FoundationIT {
+class FoundationIT extends MySqlIntegrationSupport {
 
     @LocalServerPort
     private int port;

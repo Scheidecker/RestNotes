@@ -3,13 +3,20 @@ services:
   api:
     build:
       context: .
-    image: restnotes:phase1
+    image: restnotes:phase2
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports:
       - "127.0.0.1:${SERVER_PORT:-8081}:8081"
     environment:
       SERVER_PORT: "8081"
       SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-dev}"
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      DB_URL: "jdbc:mysql://mysql:3306/RestNotes"
+      DB_USERNAME: "${DB_USERNAME:-APIUser}"
+      DB_PASSWORD: "${DB_PASSWORD:-MyAPIPassword#8}"
+      DEMO_DATA_ENABLED: "${DEMO_DATA_ENABLED:-true}"
     mem_limit: 512m
     init: true
     stop_grace_period: 30s
@@ -18,19 +25,24 @@ services:
     cap_drop:
       - ALL
 
-  # Optional scaffold only: not used by the Phase 1 API.
+  # Development defaults only. Cloud deployments must supply independent secrets.
   mysql:
-    profiles: [database]
     image: mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70
     environment:
       MYSQL_DATABASE: RestNotes
       MYSQL_USER: "${DB_USERNAME:-APIUser}"
-      MYSQL_PASSWORD: "${DB_PASSWORD:-}"
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-MyAPIPassword#8}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-MyRootPassword#8}"
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping --host=127.0.0.1 --silent"]
+      test:
+        - CMD-SHELL
+        - >-
+          MYSQL_PWD="$${MYSQL_PASSWORD}" mysql --host=127.0.0.1
+          --user="$${MYSQL_USER}" --database="$${MYSQL_DATABASE}"
+          --batch --skip-column-names --execute="SELECT 1" > /dev/null
       interval: 10s
       timeout: 5s
       retries: 15
