@@ -1,0 +1,72 @@
+# Author: Carlos Scheidecker
+server:
+  port: "${SERVER_PORT:${PORT:8081}}"
+  shutdown: graceful
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+spring:
+  application:
+    name: RestNotes
+  profiles:
+    default: "${SPRING_PROFILES_ACTIVE:dev}"
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  mvc:
+    problemdetails:
+      enabled: true
+
+logging:
+  level:
+    root: "${LOG_LEVEL:INFO}"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+    java:
+      enabled: false
+    os:
+      enabled: false
+    process:
+      enabled: false
+
+info:
+  app:
+    name: RestNotes
+    author: Carlos Scheidecker
+    phase: foundation
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+    disable-swagger-default-url: true
+    persist-authorization: false
+  show-actuator: false
+
+---
+# Local development and test only. UAT/production retain the disabled defaults.
+spring:
+  config:
+    activate:
+      on-profile: "dev | test"
+springdoc:
+  api-docs:
+    enabled: "${OPENAPI_ENABLED:true}"
+  swagger-ui:
+    enabled: "${OPENAPI_ENABLED:true}"

@@ -1,0 +1,40 @@
+# Author: Carlos Scheidecker
+services:
+  api:
+    build:
+      context: .
+    image: restnotes:phase1
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-8081}:8081"
+    environment:
+      SERVER_PORT: "8081"
+      SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-dev}"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+    mem_limit: 512m
+    init: true
+    stop_grace_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  # Optional scaffold only: not used by the Phase 1 API.
+  mysql:
+    profiles: [database]
+    image: mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70
+    environment:
+      MYSQL_DATABASE: RestNotes
+      MYSQL_USER: "${DB_USERNAME:-APIUser}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-}"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping --host=127.0.0.1 --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+
+volumes:
+  mysql-data:

@@ -1,0 +1,12 @@
+# Author: Carlos Scheidecker
+# Keep the Maven wrapper despite the repository-level .mvn/ ignore.
+!.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
+target/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.log

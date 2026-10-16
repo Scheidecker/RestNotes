@@ -1,0 +1,10 @@
+# Author: Carlos Scheidecker
+target/
+.git/
+.idea/
+.env
+.env.*
+*.pem
+*.key
+*.log
+docs/
