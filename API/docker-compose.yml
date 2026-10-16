@@ -3,7 +3,7 @@ services:
   api:
     build:
       context: .
-    image: restnotes:phase2
+    image: restnotes:phase3-auth
     depends_on:
       mysql:
         condition: service_healthy
@@ -17,6 +17,14 @@ services:
       DB_USERNAME: "${DB_USERNAME:-APIUser}"
       DB_PASSWORD: "${DB_PASSWORD:-MyAPIPassword#8}"
       DEMO_DATA_ENABLED: "${DEMO_DATA_ENABLED:-true}"
+      # Null entries inherit explicitly set host values, otherwise application defaults apply.
+      REGISTRATION_ENABLED:
+      JWT_TTL_SECONDS:
+      JWT_ISSUER:
+      JWT_AUDIENCE:
+      JWT_PRIVATE_KEY_LOCATION:
+      JWT_PUBLIC_KEY_LOCATION:
+      BCRYPT_STRENGTH:
     mem_limit: 512m
     init: true
     stop_grace_period: 30s

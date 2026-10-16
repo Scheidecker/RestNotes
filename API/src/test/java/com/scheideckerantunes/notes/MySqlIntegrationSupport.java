@@ -31,5 +31,7 @@ abstract class MySqlIntegrationSupport {
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
+        registry.add("restnotes.security.jwt.private-key-location", JwtTestKeys::privateLocation);
+        registry.add("restnotes.security.jwt.public-key-location", JwtTestKeys::publicLocation);
     }
 }

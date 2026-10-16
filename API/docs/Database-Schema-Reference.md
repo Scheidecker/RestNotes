@@ -36,7 +36,7 @@ The dataset has exactly two teams/admin users/memberships/notebooks/notes, and o
 - Marketing admin: `marketing.admin@scheideckerantunes.com`.
 - Demo initial password: `RestNotesDemo#8`.
 
-The password above is a public, local-demo value, stored only as BCrypt hashes in seed SQL. Never reuse these accounts or passwords in shared/cloud environments. Login becomes available in Phase 3. Do not confuse these application identities with the APIUser database account.
+The password above is a public, local-demo value, stored only as BCrypt hashes in seed SQL. Never reuse these accounts or passwords in shared/cloud environments. Login and profile/team-affiliation APIs are now available; note workflows follow later. Do not confuse these application identities with the APIUser database account.
 
 Deterministic UUID convention: final digit 1 is Engineering, 2 is Marketing:
 - Users: `10000000-0000-4000-8000-000000000001` and `10000000-0000-4000-8000-000000000002`.

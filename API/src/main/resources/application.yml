@@ -18,6 +18,9 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
   datasource:
     url: "${DB_URL:jdbc:mysql://localhost:3306/RestNotes}"
     username: "${DB_USERNAME:}"
@@ -75,11 +78,20 @@ info:
   app:
     name: RestNotes
     author: Carlos Scheidecker
-    phase: persistence
+    phase: authentication
 
 restnotes:
   demo:
     enabled: "${DEMO_DATA_ENABLED:false}"
+  security:
+    registration-enabled: "${REGISTRATION_ENABLED:false}"
+    bcrypt-strength: "${BCRYPT_STRENGTH:10}"
+    jwt:
+      issuer: "${JWT_ISSUER:RestNotes}"
+      audience: "${JWT_AUDIENCE:RestNotes-api}"
+      ttl-seconds: "${JWT_TTL_SECONDS:900}"
+      private-key-location: "${JWT_PRIVATE_KEY_LOCATION:}"
+      public-key-location: "${JWT_PUBLIC_KEY_LOCATION:}"
 
 springdoc:
   api-docs:
@@ -106,3 +118,6 @@ springdoc:
     enabled: "${OPENAPI_ENABLED:true}"
   swagger-ui:
     enabled: "${OPENAPI_ENABLED:true}"
+restnotes:
+  security:
+    registration-enabled: "${REGISTRATION_ENABLED:true}"

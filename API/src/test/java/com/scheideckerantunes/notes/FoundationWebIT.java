@@ -74,8 +74,8 @@ class FoundationWebIT extends MySqlIntegrationSupport {
         for (String path : new String[] {"/api/v1/notes", "/actuator/env", "/actuator/configprops", "/actuator"}) {
             mvc.perform(get(path)).andExpect(status().isUnauthorized());
         }
-        mvc.perform(post("/api/v1/auth/register")).andExpect(status().isUnauthorized());
-        mvc.perform(post("/api/v1/auth/login")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/auth/register")).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/auth/login")).andExpect(status().isBadRequest());
         mvc.perform(get("/login")).andExpect(status().isUnauthorized());
     }
 }

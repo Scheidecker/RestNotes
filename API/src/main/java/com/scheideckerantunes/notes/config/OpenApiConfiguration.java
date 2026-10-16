@@ -1,6 +1,8 @@
 package com.scheideckerantunes.notes.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
@@ -16,10 +18,12 @@ public class OpenApiConfiguration {
 
     @Bean
     OpenAPI restNotesOpenApi() {
-        return new OpenAPI().info(new Info()
+        return new OpenAPI().components(new Components().addSecuritySchemes("bearerAuth",
+                new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")))
+                .info(new Info()
                 .title("RestNotes")
                 .version("v1")
-                .description("Small-team notes API. Phase 1 foundation; business endpoints are not implemented.")
+                .description("Local account registration, JWT login and authenticated profile APIs.")
                 .contact(new Contact().name("Carlos Scheidecker")));
     }
 }

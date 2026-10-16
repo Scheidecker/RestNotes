@@ -1,12 +1,12 @@
 # RestNotes
 Author: Carlos Scheidecker
 
-Spring Boot REST API for small-team notes. **Phase 2 persistence:** MySQL, Liquibase, JPA models/repositories and the required two-team demo data are implemented. Operational endpoints and development OpenAPI/Swagger UI work; all business requests remain denied until their implementation phases.
+Spring Boot REST API for small-team notes. **Authentication increment:** registration, login, RS256 JWT validation, current-user profile and paginated team affiliations are implemented on top of MySQL/Liquibase persistence. Team-administration and note workflows remain denied pending their implementation.
 
 ## Stack
 Java 25, Maven Wrapper 3.9.16, Spring Boot 4.1.1, Springdoc 3.1.1, Spring MVC, Validation, Security and Actuator. Spring dependency versions come from the Boot parent. The optional `spring-milestones` Maven profile declares the requested milestone repository with snapshots disabled; normal builds use Central.
 
-Persistence uses Data JPA, MySQL 8.4.11, Liquibase Community 5.0.4 and Testcontainers 2.0.5. The deliberate Liquibase override of Boot's 5.0.3 has passed the real-MySQL migration/integration suite. JWT authentication follows in Phase 3.
+Persistence uses Data JPA, MySQL 8.4.11, Liquibase Community 5.0.4 and Testcontainers 2.0.5. The Liquibase override of Boot's 5.0.3 has passed real-MySQL tests. Spring Security's supported RSA JWT encoder/decoder and password authentication provider implement identity without a separate authentication service.
 
 ## Run locally
 Prerequisites: JDK 25 and unzip (or Expand-Archive on Windows); first build requires network access to Maven Central. The wrapper pins the Maven ZIP SHA-256, so unzip is required on Unix.
@@ -32,7 +32,13 @@ The Compose file uses the supplied fixed database/root credentials only as local
 - http://localhost:8081/swagger-ui.html (dev/test)
 - http://localhost:8081/v3/api-docs and `/v3/api-docs.yaml` (dev/test)
 
-The OpenAPI document intentionally has no business operations yet. Unknown/business routes and sensitive Actuator routes return 401; there is no generated default user, Basic login or form login. UAT/prod disable documentation by default. This skeleton is not a production-ready notes service.
+Authentication endpoints:
+- `POST /api/v1/auth/register`: email, password and fullName; returns 201 and a safe profile (no automatic team membership or token).
+- `POST /api/v1/auth/login`: email/password; returns accessToken, tokenType, expiresIn and expiresAt.
+- `GET /api/v1/users/me`: authenticated scalar profile.
+- `GET /api/v1/users/me/teams?page=0&size=20`: current affiliations, fixed ordering by team name then ID; maximum size 100.
+
+Use `Authorization: Bearer ...` for protected routes. Unknown/unimplemented routes remain denied (401 without authentication, 403 with a valid token). Basic/form login and cookie sessions are disabled. Swagger documents the new endpoints and bearer authorization. UAT/prod disable documentation by default. See the [CURL guide](docs/CURL_Guide.md) for the complete working onboarding/login sequence.
 
 ## Configuration
 All Spring configuration is in `src/main/resources/application.yml`.
@@ -48,7 +54,20 @@ Additional persistence settings:
 - DEMO_DATA_ENABLED: false by default; local Compose explicitly defaults it to true.
 - MIGRATIONS_ENABLED: true in dev/test; false in UAT/prod. Use a schema-only deployment migration identity before starting protected environments.
 
-The API refuses root connections in all profiles, and UAT/prod reject missing/blank/known demo credentials and demo seeding before datasource initialization. Production JWT safeguards arrive with Phase 3. This increment is not production-ready.
+The API refuses root connections in all profiles, and UAT/prod reject missing/blank/known demo credentials and demo seeding before datasource initialization.
+
+Authentication settings:
+- REGISTRATION_ENABLED: true in dev/test, false in UAT/prod. An operator can explicitly enable onboarding; public deployment requires abuse controls.
+- BCRYPT_STRENGTH: 10 by default, configurable 10–14. Registration requires 12–72 characters and at most 72 UTF-8 bytes; password whitespace is preserved.
+- JWT_TTL_SECONDS: 900 by default, configurable 60–3600.
+- JWT_ISSUER / JWT_AUDIENCE: RestNotes / RestNotes-api.
+- JWT_PRIVATE_KEY_LOCATION / JWT_PUBLIC_KEY_LOCATION: matching PKCS#8 private and X.509 public PEM `file:` URIs. Both must be set together; RSA must be at least 2048 bits.
+
+Without configured keys, dev/test generate an ephemeral in-memory pair. Restart invalidates their tokens. UAT/prod, including mixed dev/prod profiles, require stable externally supplied key files. Mount them read-only outside the image, grant the runtime user read access, and share the same pair across replicas. Compose forwards explicitly configured security variables but does not create key-file mounts.
+
+Tokens validate RS256 signature, issuer, audience, expiration, issued-at, canonical UUID subject and current user existence. Timestamp tolerance is 30 seconds. Tokens contain no team roles, passwords or profile email; affiliations are read live from MySQL. No refresh/logout/revocation-list endpoint is provided: re-login on expiry, and discard local tokens when finished. Key replacement invalidates old tokens unless a later overlapping-key rotation mechanism is introduced; coordinate replacement across replicas.
+
+HTTPS, edge throttling on registration/login, secret distribution, identity recovery/email verification and full authorization workflows remain production-deployment prerequisites. CORS is not enabled; this is a header-bearer API, not cookie authentication.
 
 Never store real secrets in Git, logs, images or command-line literals. `.env.example` documents variable names; local `.env` files and key files are ignored. Do not print `docker compose config` or container environment values when real credentials are configured; use `config --quiet` for syntax validation.
 
@@ -58,14 +77,14 @@ Never store real secrets in Git, logs, images or command-line literals. `.env.ex
 - `./mvnw checkstyle:check`: source style checks.
 - `docker compose config --quiet`: validate container configuration without rendering values.
 
-Tests cover safe operational/docs access, restricted production docs, clean schema, explicit demo contexts, repeat startup, preserved edits, seed graph, BCrypt hashes, binary UUIDs, UTC precision, tenant-aware pagination, cross-team foreign keys, history uniqueness, role/email constraints and stale writes. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
+Tests cover JWT claims/signatures/key policies, registration/login and duplicate races, input limits, profile isolation/live memberships and production registration defaults, plus all persistence/operational checks from earlier phases. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
 
 ## Required demo data — Phase 2
 Liquibase pre-populates exactly two isolated teams when demo mode is explicitly enabled:
 - Engineering: `engineering.admin@scheideckerantunes.com`, ADMIN, one notebook and one note authored by this admin.
 - Marketing: `marketing.admin@scheideckerantunes.com`, ADMIN, one notebook and one note authored by this admin.
 
-Each sample note has an initial history snapshot and activity entry. Demo changesets are development/test-only and do not duplicate or reset records on restart. See the [schema reference](docs/Database-Schema-Reference.md#required-development-seed-dataset) for deterministic identifiers and the public local-only demo password. These accounts cannot authenticate until Phase 3.
+Each sample note has an initial history snapshot and activity entry. Demo changesets are development/test-only and do not duplicate or reset records on restart. See the [schema reference](docs/Database-Schema-Reference.md#required-development-seed-dataset) for identifiers and the public local-only demo password. Both admins can now log in and view their own profile/team affiliation; note endpoints are not implemented yet.
 
 ## Documentation
 - [API design](docs/API.Design.md)
@@ -77,8 +96,8 @@ Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deploymen
 
 ## Review gates
 1. Foundation — completed.
-2. Persistence, Liquibase and demo fixtures — this increment.
-3. Identity, teams and role enforcement.
+2. Persistence, Liquibase and demo fixtures — completed.
+3. Identity/security — this increment; team administration and role-management services still pending.
 4. Notebooks/notes, tags, archive and concurrency.
 5. Comments, history restore, search and activity.
 6. Release validation and complete deployment/usage manuals.
