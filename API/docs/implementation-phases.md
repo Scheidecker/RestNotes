@@ -22,11 +22,12 @@ Acceptance: successful onboarding/authentication, invalid credentials/tokens rej
 Suggested manual commit subject: `feat: add authentication and team access control`.
 
 ## Phase 4 — Notebook and note vertical slice
+Current sub-increment: notebook management and explicitly restored cross-team sharing, with VIEWER/EDITOR grants capped by membership roles and owner-ADMIN-only administration. Note CRUD remains review-gated.
 Scope: notebook management/archive, note CRUD/archive, ETags/If-Match, pinning, tags, immutable snapshot creation, and transactional activity recording.
 Implement repositories/services/controllers together per feature and include concurrency/authorization tests. Record history/activity now so phase-4 operations are not lost before phase 5 exposes their read APIs.
 Acceptance: end-to-end note workflows, viewer write denial, hidden archived data, failed stale writes without partial history/activity, and deterministic pagination.
 Suggested manual commit subject: `feat: implement notebooks notes and optimistic concurrency`.
-Stop for review and the user's manual commit.
+
 ## Phase 5 — Collaboration, history, and discovery
 Scope: comments, history metadata/detail/restore, MySQL full-text search with access-aware filtering/counts, team activity retrieval, updated OpenAPI/CURL examples, and sequence diagrams.
 Acceptance: restore appends rather than overwrites history, inaccessible history IDs cannot be restored, search never leaks another team's data, and every collection is paginated.

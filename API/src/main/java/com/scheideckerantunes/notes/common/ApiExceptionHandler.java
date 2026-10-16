@@ -3,6 +3,7 @@ package com.scheideckerantunes.notes.common;
 import com.scheideckerantunes.notes.auth.DuplicateAccountException;
 import com.scheideckerantunes.notes.auth.RegistrationDisabledException;
 import com.scheideckerantunes.notes.team.TeamConflictException;
+import com.scheideckerantunes.notes.notebook.NotebookOperationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -37,6 +38,14 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     ProblemDetail notFound(HttpServletRequest request) {
         return ApiProblems.create(HttpStatus.NOT_FOUND, "Resource not found", request);
+    }
+
+    @ExceptionHandler(NotebookOperationException.class)
+    ProblemDetail notebook(NotebookOperationException exception, HttpServletRequest request) {
+        var code = exception.getCode();
+        ProblemDetail problem = ApiProblems.create(code.status(), code.detail(), request);
+        problem.setProperty("code", code.name());
+        return problem;
     }
 
     @ExceptionHandler(TeamConflictException.class)

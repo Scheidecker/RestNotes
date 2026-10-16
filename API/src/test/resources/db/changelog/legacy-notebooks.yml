@@ -1,0 +1,31 @@
+# Author: Carlos Scheidecker
+# Reproduces the pre-sharing checksums/identities, using the unchanged production SQL.
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-restnotes-schema
+      author: Carlos Scheidecker
+      logicalFilePath: db/changelog/schema.yml
+      dbms: mysql
+      runInTransaction: false
+      changes:
+        - sqlFile:
+            path: classpath:db/changelog/sql/001-schema.sql
+  - changeSet:
+      id: 002-note-fulltext-index
+      author: Carlos Scheidecker
+      logicalFilePath: db/changelog/schema.yml
+      dbms: mysql
+      runInTransaction: false
+      changes:
+        - sql:
+            sql: CREATE FULLTEXT INDEX idx_notes_fulltext ON notes(title, content)
+  - changeSet:
+      id: 003-development-demo-data
+      author: Carlos Scheidecker
+      logicalFilePath: db/changelog/demo.yml
+      dbms: mysql
+      contextFilter: "@demo"
+      runInTransaction: true
+      changes:
+        - sqlFile:
+            path: classpath:db/changelog/sql/003-demo.sql

@@ -9,11 +9,14 @@ The official image creates `RestNotes` and `APIUser` on an empty volume. APIUser
 
 Never edit a changeset that has been applied to a persistent database. Add forward migrations instead. MySQL DDL is not universally transactional; partial failed DDL may require an operator-approved repair/restore. Database/user creation belongs to the image or deployment operator, not Liquibase.
 
+Migration `004-notebook-sharing` adds notebook_shares and extends the activity action check without rewriting changesets 001–003. Existing edited notebooks/notes/users are preserved; no grants are seeded. Upgrade tests reproduce the prior migration identities/checksums and verify the additive upgrade. Normal startup on a previous local volume should apply this migration, not require a reset.
+
 ## Tables
 - `users`: normalized unique email, BCrypt password hash, display name and timestamps.
 - `teams`: name/description, timestamps and optimistic version.
 - `team_members`: composite team/user key, constrained ADMIN/EDITOR/VIEWER role and joined timestamp.
 - `notebooks`: owning team, title/description, creator, archive timestamp and optimistic version.
+- `notebook_shares`: unique notebook/recipient-team key, constrained VIEWER/EDITOR grant and shared/update timestamps.
 - `notes`: notebook/team, Markdown title/content, pinned state, attribution, archive timestamp and optimistic version.
 - `tags`: team-scoped normalized name and timestamps.
 - `note_tags`: note/tag key and shared team column constrained against both parent tables.
@@ -25,7 +28,9 @@ All UUIDs use ordinary BINARY(16) bytes: SQL `UUID_TO_BIN(uuid)` without byte sw
 
 All timestamps use UTC DATETIME(6) and application-assigned microsecond Instants. `version` is an optimistic concurrency token, not the history sequence. Content is MEDIUMTEXT with a 256 KiB byte check; comment length is 1–10,000 characters. Tags are normalized and unique per team.
 
-Composite foreign keys enforce notebook/note ownership and same-team note/tag links. Deletion is restricted rather than cascading away history; archive endpoints follow in Phase 4. Hibernate validates schema and never creates/updates it.
+Notebook shares are team-level VIEWER/EDITOR only with restrictive foreign keys and a recipient lookup index. Grant writes also advance the owning notebook's JPA version/update timestamp and record activity atomically. Archiving retains share/note/history rows but removes access through all ordinary queries. Current membership and grant checks happen before pagination/counting; strongest access paths combine without duplicate results.
+
+Composite foreign keys enforce notebook/note ownership and same-team note/tag links. Deletion is restricted rather than cascading away history; notebook archival is implemented while note HTTP archival remains pending. Hibernate validates schema and never creates/updates it.
 
 Indexes support user-to-team membership, notebook/team discovery, note lists, comments by time, history versions and activity by time. FULLTEXT covers note title/content. MySQL token length, stopwords and collation affect matching; this is not arbitrary substring search. Team-aware search is implemented later.
 

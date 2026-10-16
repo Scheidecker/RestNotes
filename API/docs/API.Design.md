@@ -1,10 +1,10 @@
 # RestNotes API design
 Author: Carlos Scheidecker
 
-## Implemented: Phase 3 identity and teams
-One Java 25 Spring Boot application, one Maven module, package `com.scheideckerantunes.notes`. Authentication/profile APIs and team creation/discovery/member administration are implemented. Notebook/note controllers remain unavailable and denied.
+## Implemented: notebooks and sharing
+One Java 25 Spring Boot application, one Maven module, package `com.scheideckerantunes.notes`. Identity/team administration and notebook management/sharing are implemented. Note CRUD and later collaboration controllers remain unavailable and denied.
 
-Health/probes/info, dev/test documentation, and POST register/login permit anonymous requests. Profile and implemented team routes require a validated bearer token; other routes default-deny. Basic/form login are disabled and requests are stateless. CSRF is disabled for header-bearer authentication; cookie authentication would require revisiting that choice. No cross-origin policy is enabled. Health omits component details and Actuator exposure is not wildcarded.
+Health/probes/info, dev/test documentation, and POST register/login permit anonymous requests. Profile, team and implemented notebook routes require a validated bearer token; other routes default-deny. Basic/form login are disabled and requests are stateless. CSRF is disabled for header-bearer authentication; cookie authentication would require revisiting that choice. No cross-origin policy is enabled. Health omits component details and Actuator exposure is not wildcarded.
 
 UAT/prod disable documentation and registration by default and require non-demo DB credentials plus mounted persistent RSA keys, including mixed dev/prod profiles. Deployment-edge throttling, identity recovery and the remaining note workflows are not implemented; this increment must not be treated as a complete production service.
 
@@ -32,6 +32,21 @@ Demoting/removing the final ADMIN returns 409 (`LAST_TEAM_ADMIN`); duplicate add
 
 The last-admin invariant applies to service-mediated writes. SQL foreign keys/checks alone cannot enforce it; migrations and operator scripts must preserve it. Team rename/delete and invitation/acceptance APIs are not part of this increment.
 
+## Notebook management and explicitly restored sharing
+Owner-team ADMINs create/update/archive notebooks and manage grants. Notebook title is trimmed/nonblank and at most 150 characters; description is optional and at most 2,000. Ownership/creator cannot be patched. PATCH omits/nulls to leave fields unchanged and accepts an empty description to clear its text; an empty patch is 400. Repeating unchanged metadata or grants is a no-op without extra activity or version changes.
+
+The user explicitly restored cross-team sharing. A grant targets an existing team UUID and contains VIEWER or EDITOR only; self-sharing is 409 and external ADMIN is not a supported grant. No public links, individual-user grants, invitations or ownership transfer are provided. Only owner-team ADMINs can list/upsert/revoke grants; recipient admins do not gain this authority.
+
+Effective access is the strongest current path: owning-team role, or min(shared access, recipient membership role). A recipient VIEWER stays VIEWER even with an EDITOR grant; a recipient ADMIN/EDITOR caps at EDITOR. Independent legitimate paths combine, so removing one grant does not revoke another path. An owner-team VIEWER with a valid external EDITOR path may read with EDITOR capability but still cannot administer the notebook.
+
+Notebook and existing note repository reads share one EXISTS-based visibility predicate and exclude archives before pagination/counting. Effective roles are resolved in two batch queries for a notebook page, rather than per item; no grants/notes are embedded as unbounded lists. The optional notebook teamId filter means the owning team, not the recipient. Permissions are separately paginated by target team name/ID; notebook lists use update-time/ID ordering.
+
+Metadata/archive and permission changes require one strong If-Match. Detail/create/mutation responses return ETags scoped to notebook version, caller and effective role; this also reflects role changes without falsely reusing the same strong validator. Missing precondition is 428, stale is 412, malformed/weak/wildcard or multi-tag input is 400. Permissions mutations advance the notebook's normal JPA version/update timestamp along with atomic activity.
+
+Write commands use READ_COMMITTED and lock teams before the notebook, refreshing current role/state and retaining the 15-second timeout. Grant/revoke commands lock owner and recipient teams in sorted UUID order to avoid reciprocal-share foreign-key deadlocks; missing recipients are reported only after authorization. The initial ownership lookup is a scalar projection, avoiding stale managed entity versions before locking and older MySQL repeatable-read refresh snapshots. Read-only transactions retain the datasource's default consistent snapshot behavior.
+
+DELETE archives, does not cascade-delete notes/history/grants, and hides metadata/permissions and note visibility from all normal paths. Repeating archive as an owner ADMIN with its returned current tag is 204; an old tag is 412. Revoking an absent grant with a current tag is 204. No unarchive/purge API exists. Note HTTP CRUD is not implemented; its future write authorization must enforce the same capped access model.
+
 ## Persistence increment
 JPA/MySQL/Liquibase integration is implemented. Liquibase owns DDL; Hibernate validates it. Testcontainers runs the same MySQL image as Compose, not H2. Official image variables create the RestNotes database and APIUser on an empty volume; Liquibase does not connect as root or provision server users.
 
@@ -44,9 +59,9 @@ Feature-oriented controllers/services/repositories stay in one deployment. Authe
 
 ADMIN manages notebooks and memberships; EDITOR modifies notes; VIEWER reads. Admin is team-scoped. Protect the last admin and authorize every nested-resource/query/count operation. Expose DTOs, not JPA entities. Registration never grants team access.
 
-Use `/api/v1`, Markdown-only content, team-inherited notebook permissions, archive rather than ambiguous destructive deletion, RFC 9457 errors, and paginated business collection DTOs (page 0, size 20, max 100, stable sorts). Note writes require ETag/If-Match, returning 428 when absent and 412 when stale. Note updates/history/activity are transactional; restore appends history.
+Use `/api/v1`, Markdown-only content, owning-team plus explicitly granted notebook access, archive rather than destructive deletion, RFC 9457 errors, and paginated DTOs. Future note writes require ETag/If-Match, returning 428 when absent and 412 when stale. Note updates/history/activity will be transactional; restore appends history.
 
-Cross-team ACLs, locks, rich-text JSON, email invites, mentions/notifications, refresh tokens and live co-editing are deferred. Use optimistic concurrency and MySQL full-text search rather than more infrastructure.
+Public/individual ACLs, editing leases, rich-text JSON, email invites, mentions/notifications, refresh tokens and live co-editing remain deferred. Team-level cross-team notebook sharing is now implemented. Use optimistic concurrency and MySQL full-text search rather than more infrastructure.
 
 ## Dependencies and delivery
 Stable published baseline: Boot 4.1.1, Springdoc 3.1.1 and Maven 3.9.16. Boot controls Spring/Security/JWT library versions. Liquibase Community is explicitly overridden to 5.0.4 and verified with Boot/MySQL; Hibernate, JDBC and Testcontainers remain Boot-managed. The milestone repository is opt-in; no milestone dependency is used.

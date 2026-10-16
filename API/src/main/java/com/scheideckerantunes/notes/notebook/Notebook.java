@@ -6,6 +6,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.Objects;
+import java.time.temporal.ChronoUnit;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -63,5 +65,28 @@ public class Notebook extends VersionedEntity {
 
     public Instant getArchivedAt() {
         return archivedAt;
+    }
+
+    public boolean updateMetadata(String title, String description) {
+        String nextTitle = title == null ? this.title : title;
+        String nextDescription = description == null ? this.description : description;
+        if (Objects.equals(this.title, nextTitle) && Objects.equals(this.description, nextDescription)) {
+            return false;
+        }
+        this.title = nextTitle;
+        this.description = nextDescription;
+        return true;
+    }
+
+    public void permissionsChanged() {
+        markUpdated();
+    }
+
+    public boolean archive(Instant at) {
+        if (archivedAt != null) {
+            return false;
+        }
+        archivedAt = at.truncatedTo(ChronoUnit.MICROS);
+        return true;
     }
 }

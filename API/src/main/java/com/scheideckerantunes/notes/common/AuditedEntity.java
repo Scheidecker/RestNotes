@@ -29,7 +29,12 @@ public abstract class AuditedEntity extends UuidEntity {
 
     @PreUpdate
     protected void recordUpdate() {
-        updatedAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
+        markUpdated();
+    }
+
+    protected void markUpdated() {
+        Instant now = Instant.now().truncatedTo(ChronoUnit.MICROS);
+        updatedAt = updatedAt != null && !now.isAfter(updatedAt) ? updatedAt.plus(1, ChronoUnit.MICROS) : now;
     }
 
     public Instant getCreatedAt() {

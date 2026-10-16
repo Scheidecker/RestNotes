@@ -3,6 +3,7 @@ package com.scheideckerantunes.notes.team;
 import java.util.UUID;
 import java.util.Optional;
 import java.util.List;
+import java.util.Collection;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,20 @@ import org.springframework.data.jpa.repository.Lock;
  */
 public interface TeamMemberRepository extends JpaRepository<TeamMember, TeamMemberId> {
     Page<TeamMember> findByIdTeamId(UUID teamId, Pageable pageable);
+
+    @Query("select m.id.teamId as teamId, m.role as role from TeamMember m "
+            + "where m.id.userId = :userId and m.id.teamId in :teamIds")
+    List<OwnerRole> findOwnerRoles(UUID userId, Collection<UUID> teamIds);
+
+    /**
+     * Scalar batch projection avoids stale first-level entity-cache role values.
+     *
+     * @author Carlos Scheidecker
+     */
+    interface OwnerRole {
+        UUID getTeamId();
+        TeamRole getRole();
+    }
 
     @Query("select new com.scheideckerantunes.notes.team.TeamMemberResponse("
             + "u.id, u.email, u.fullName, m.role, m.joinedAt) "

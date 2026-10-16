@@ -23,7 +23,7 @@ public class OpenApiConfiguration {
                 .info(new Info()
                 .title("RestNotes")
                 .version("v1")
-                .description("Local account registration, JWT login and authenticated profile APIs.")
+                .description("Identity, team administration, notebook management and cross-team sharing APIs.")
                 .contact(new Contact().name("Carlos Scheidecker")));
     }
 }

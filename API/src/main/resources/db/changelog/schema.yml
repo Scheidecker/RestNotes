@@ -17,3 +17,12 @@ databaseChangeLog:
       changes:
         - sql:
             sql: CREATE FULLTEXT INDEX idx_notes_fulltext ON notes(title, content)
+  - changeSet:
+      id: 004-notebook-sharing
+      author: Carlos Scheidecker
+      dbms: mysql
+      runInTransaction: false
+      changes:
+        - sqlFile:
+            path: sql/004-notebook-sharing.sql
+            relativeToChangelogFile: true

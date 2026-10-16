@@ -1,7 +1,7 @@
 # RestNotes
 Author: Carlos Scheidecker
 
-Spring Boot REST API for small-team notes. **Phase 3 — identity and teams:** registration/login, JWT security, profiles, team creation/discovery and membership administration are implemented on top of MySQL/Liquibase persistence. Notebook/note workflows remain denied pending Phase 4.
+Spring Boot REST API for small-team notes. **Notebook/sharing increment:** identity/team administration now includes notebook management and explicitly approved cross-team VIEWER/EDITOR grants. Note CRUD and later collaboration workflows remain unavailable pending further review.
 
 ## Stack
 Java 25, Maven Wrapper 3.9.16, Spring Boot 4.1.1, Springdoc 3.1.1, Spring MVC, Validation, Security and Actuator. Spring dependency versions come from the Boot parent. The optional `spring-milestones` Maven profile declares the requested milestone repository with snapshots disabled; normal builds use Central.
@@ -53,6 +53,20 @@ Every team must retain at least one ADMIN, including during concurrent requests.
 
 Collections use the stable page envelope and size limit 100. Team lists sort by name/ID; member lists by full name/user ID. Unknown/inaccessible resources return 404, insufficient role on a visible team returns 403, and duplicate membership/final-admin conflicts return 409 with a stable code. Team names need not be globally unique.
 
+Notebook/sharing endpoints:
+- `POST /api/v1/notebooks`: owner-team ADMIN creates a notebook.
+- `GET /api/v1/notebooks?page=0&size=20&teamId=...`: visible owned/shared notebooks; optional owning-team filter.
+- `GET /api/v1/notebooks/{id}`: metadata, effective accessLevel and a caller-scoped ETag.
+- `PATCH /api/v1/notebooks/{id}`: owner-team ADMIN updates title/description.
+- `DELETE /api/v1/notebooks/{id}`: owner-team ADMIN archives without deleting notes/history.
+- `GET /api/v1/notebooks/{id}/permissions`: owner-admin-only paginated team grants.
+- `PATCH /api/v1/notebooks/{id}/permissions`: owner ADMIN upserts one `{teamId,accessLevel}` grant.
+- `DELETE /api/v1/notebooks/{id}/permissions/{teamId}`: owner ADMIN revokes a grant.
+
+Notebook PATCH/DELETE and grant mutations require one current strong If-Match: missing 428, stale 412, malformed/weak/wildcard 400. Retrieve your own current ETag from notebook detail and use returned ETags after mutations. Tags are scoped to notebook/version/caller/effective role; do not reuse another user's tag.
+
+Sharing grants only VIEWER/EDITOR and caps each path by the recipient's current membership role. The strongest legitimate path wins when a user belongs to multiple teams. Shared access never grants notebook administration or membership in the owning team. Archived resources are hidden through all paths. Read the [notebook walkthrough](docs/CURL_Guide.md#notebooks-and-cross-team-sharing) before editing permissions.
+
 ## Configuration
 All Spring configuration is in `src/main/resources/application.yml`.
 - SERVER_PORT: 8081, then platform PORT as fallback for a host-run JVM. In Compose, SERVER_PORT controls the host port; the container listens on 8081.
@@ -90,14 +104,14 @@ Never store real secrets in Git, logs, images or command-line literals. `.env.ex
 - `./mvnw checkstyle:check`: source style checks.
 - `docker compose config --quiet`: validate container configuration without rendering values.
 
-Tests cover JWT policies, onboarding and duplicate races, team authorization/isolation, current-role changes, paginated discovery/members, transaction rollback and concurrent last-admin changes, plus all earlier persistence/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
+Tests cover identity/team authorization, notebook lifecycle, capped/multiple sharing paths, revocation/archive, conditional-write races, transaction rollback and an already-initialized database upgrade, plus earlier persistence/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
 
 ## Required demo data — Phase 2
 Liquibase pre-populates exactly two isolated teams when demo mode is explicitly enabled:
 - Engineering: `engineering.admin@scheideckerantunes.com`, ADMIN, one notebook and one note authored by this admin.
 - Marketing: `marketing.admin@scheideckerantunes.com`, ADMIN, one notebook and one note authored by this admin.
 
-Each sample note has an initial history snapshot and activity entry. Demo changesets are development/test-only and do not duplicate or reset records on restart. See the [schema reference](docs/Database-Schema-Reference.md#required-development-seed-dataset) for identifiers and the public local-only demo password. Both admins can now log in and view their own profile/team affiliation; note endpoints are not implemented yet.
+Each sample note has an initial history snapshot and activity entry. Demo changesets do not duplicate/reset records on restart. See the [schema reference](docs/Database-Schema-Reference.md#required-development-seed-dataset) for identifiers and local-only credentials. No cross-team grants are seeded: the two teams start isolated until an owner ADMIN explicitly shares a notebook. Note HTTP endpoints are not implemented yet.
 
 ## Documentation
 - [API design](docs/API.Design.md)
@@ -112,7 +126,7 @@ Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deploymen
 1. Foundation — completed.
 2. Persistence, Liquibase and demo fixtures — completed.
 3. Identity, teams and role enforcement — completed in this increment.
-4. Notebooks/notes, tags, archive and concurrency.
+4. Notebooks/sharing — this increment; note CRUD, tags and history snapshots still pending.
 5. Comments, history restore, search and activity.
 6. Release validation and complete deployment/usage manuals.
 

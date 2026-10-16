@@ -1,4 +1,5 @@
 package com.scheideckerantunes.notes.note;
+import com.scheideckerantunes.notes.notebook.NotebookVisibility;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -15,8 +16,7 @@ import org.springframework.data.jpa.repository.Query;
 public interface NoteRepository extends JpaRepository<Note, UUID> {
 
     String VISIBLE = "n.archivedAt is null and exists "
-            + "(select b from Notebook b where b.id = n.notebookId and b.archivedAt is null) and exists "
-            + "(select m from TeamMember m where m.id.teamId = n.teamId and m.id.userId = :userId)";
+            + "(select b from Notebook b where b.id = n.notebookId and " + NotebookVisibility.READABLE + ")";
 
     @Query("select n from Note n where " + VISIBLE)
     Page<Note> findVisibleTo(UUID userId, Pageable pageable);

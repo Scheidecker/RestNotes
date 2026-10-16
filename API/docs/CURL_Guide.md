@@ -1,4 +1,4 @@
-# CURL guide — authentication, team administration and operational endpoints
+# CURL guide — identity, teams, notebooks, sharing and operational endpoints
 Author: Carlos Scheidecker
 
 Start the API using the [quick start](Quick_start.md). Examples below use Bash, curl and Python 3. Use HTTPS outside localhost, do not enable shell tracing (`set -x`), and never print tokens. Set the base URL once:
@@ -193,10 +193,168 @@ Expected: 204. Repeating removal of an absent membership returns 204 while the c
 
 Team changes and their activity metadata commit together. Role writes are serialized, without ETag/If-Match requirements. No team rename/delete, standalone member-detail GET, invitations or activity-feed HTTP operations are promised by this increment.
 
-Clean up shell credentials/identifiers when finished:
+Keep RN_TOKEN and RN_TEAM_ID for the notebook walkthrough below; cleanup commands are at its end.
+
+## Notebooks and cross-team sharing
+Continue as the ADMIN of the team created above. Every notebook collection uses page/size (defaults 0/20, maximum 100). Notebook mutation requires your own current strong ETag; missing If-Match is 428, stale is 412, and weak/wildcard/multiple or malformed tags are 400.
+
+### 1. Create — POST /api/v1/notebooks
 
 ```bash
-unset RN_TOKEN RN_EMAIL RN_FULL_NAME RN_TEAM_ID RN_CREATOR_ID RN_MEMBER_EMAIL RN_MEMBER_ID
+RN_NOTEBOOK_ID=$(
+  python3 -c 'import json,os; print(json.dumps({
+      "teamId":os.environ["RN_TEAM_ID"], "title":"Release notebook",
+      "description":"Cross-functional release planning"}))' |
+    curl --silent --show-error --fail-with-body \
+      --header @<(printf 'Authorization: Bearer %s\n' "$RN_TOKEN") \
+      --header 'Content-Type: application/json' --data-binary @- \
+      "$RN_BASE_URL/api/v1/notebooks" |
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])'
+)
+export RN_NOTEBOOK_ID
+```
+
+Expected: 201 with Location and ETag. Only an owner-team ADMIN may create; a nonmember gets 404 and another owning-team role gets 403. Title is required, trimmed and limited to 150 characters; optional description is limited to 2,000.
+
+### 2. List — GET /api/v1/notebooks
+
+```bash
+printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+  curl --fail-with-body --header @- \
+    "$RN_BASE_URL/api/v1/notebooks?page=0&size=20&teamId=$RN_TEAM_ID"
+```
+
+Expected: 200 with owned/shared visible notebooks, filtered before pagination/counting. The optional teamId is the owning team, not the recipient; omit it to view all accessible notebooks. Ordering is update-time descending then ID.
+
+### 3. Read and capture ETag — GET /api/v1/notebooks/{id}
+
+```bash
+printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+  curl --fail-with-body --include --header @- \
+    "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID"
+
+refresh_notebook_etag() {
+  RN_NOTEBOOK_ETAG=$(
+    printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+      curl --silent --show-error --fail-with-body --header @- \
+        --dump-header - --output /dev/null \
+        "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID" |
+      python3 -c 'import sys; headers=sys.stdin.read().splitlines()
+print(next(line.split(":",1)[1].strip() for line in headers if line.lower().startswith("etag:")))'
+  )
+  export RN_NOTEBOOK_ETAG
+}
+refresh_notebook_etag
+```
+
+Expected: 200 with scalar metadata, version and effective accessLevel. ETags are scoped to notebook/version/caller/effective role. They are concurrency validators, not credentials, and must not be reused across users.
+
+### 4. Update metadata — PATCH /api/v1/notebooks/{id}
+
+```bash
+RN_STALE_NOTEBOOK_ETAG=$RN_NOTEBOOK_ETAG
+export RN_STALE_NOTEBOOK_ETAG
+curl --fail-with-body --request PATCH \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTEBOOK_ETAG") \
+  --header 'Content-Type: application/json' --data '{"title":"Updated release notebook"}' \
+  "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID"
+refresh_notebook_etag
+```
+
+Expected: 200 and a new ETag. Omitted/null fields are unchanged; empty description clears its text; an empty patch is 400. Unchanged metadata is a no-op. Reusing the old tag must not overwrite the update:
+
+```bash
+curl --include --request PATCH \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_STALE_NOTEBOOK_ETAG") \
+  --header 'Content-Type: application/json' --data '{"description":"Must not overwrite"}' \
+  "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID"
+```
+
+Expected: 412 with code STALE_IF_MATCH. Retrieve the current tag rather than retrying a stale write blindly.
+
+### 5. List grants — GET /api/v1/notebooks/{id}/permissions
+
+```bash
+printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+  curl --fail-with-body --header @- \
+    "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID/permissions?page=0&size=20"
+```
+
+Expected: 200 with a paginated grant list, initially empty, ordered by recipient team name/ID. Only owner-team ADMINs may inspect grants.
+
+### 6. Grant/change access — PATCH /api/v1/notebooks/{id}/permissions
+The seeded Marketing team is a suitable recipient when using the newly created owning team above:
+
+```bash
+export RN_SHARE_TEAM_ID='20000000-0000-4000-8000-000000000002'
+python3 -c 'import json,os; print(json.dumps({
+    "teamId":os.environ["RN_SHARE_TEAM_ID"], "accessLevel":"EDITOR"}))' |
+  curl --fail-with-body --request PATCH \
+    --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTEBOOK_ETAG") \
+    --header 'Content-Type: application/json' --data-binary @- \
+    "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID/permissions"
+refresh_notebook_etag
+```
+
+Expected: 200 and an advanced notebook ETag. This upserts one team grant. Valid levels are VIEWER/EDITOR only; ADMIN is 400, own-team sharing is 409, and an unknown team is 404. Repeating the same grant with the current tag is a no-op.
+
+Effective shared access is capped by current recipient membership: a recipient VIEWER remains VIEWER; an ADMIN/EDITOR caps at EDITOR. Multiple legitimate paths combine using their strongest effective access. A shared recipient never gains owner-team membership or notebook administration.
+
+To check recipient access, enter the local-only Marketing demo password from the schema guide without changing the owner token:
+
+```bash
+IFS= read -r -s -p 'Marketing demo password: ' RN_SHARE_PASSWORD
+printf '\n'
+export RN_SHARE_PASSWORD
+RN_RECIPIENT_TOKEN=$(
+  python3 -c 'import json,os; print(json.dumps({
+      "email":"marketing.admin@scheideckerantunes.com",
+      "password":os.environ["RN_SHARE_PASSWORD"]}))' |
+    curl --silent --show-error --fail-with-body --header 'Content-Type: application/json' --data-binary @- \
+      "$RN_BASE_URL/api/v1/auth/login" |
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["accessToken"])'
+)
+export RN_RECIPIENT_TOKEN
+unset RN_SHARE_PASSWORD
+printf 'Authorization: Bearer %s\n' "$RN_RECIPIENT_TOKEN" |
+  curl --fail-with-body --header @- "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID"
+printf 'Authorization: Bearer %s\n' "$RN_RECIPIENT_TOKEN" |
+  curl --include --header @- "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID/permissions"
+```
+
+Expected: 200 with accessLevel EDITOR for notebook detail, but 403 for its permissions list.
+
+### 7. Revoke — DELETE /api/v1/notebooks/{id}/permissions/{team_id}
+
+```bash
+curl --fail-with-body --include --request DELETE \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTEBOOK_ETAG") \
+  "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID/permissions/$RN_SHARE_TEAM_ID"
+refresh_notebook_etag
+printf 'Authorization: Bearer %s\n' "$RN_RECIPIENT_TOKEN" |
+  curl --include --header @- "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID"
+```
+
+Expected: 204 for revoke and 404 for recipient access with the same existing token. A separate valid access path would remain usable. Revoking an absent grant with the current tag is an idempotent 204.
+
+### 8. Archive — DELETE /api/v1/notebooks/{id}
+
+```bash
+curl --fail-with-body --include --request DELETE \
+  --header @<(printf 'Authorization: Bearer %s\nIf-Match: %s\n' "$RN_TOKEN" "$RN_NOTEBOOK_ETAG") \
+  "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID"
+printf 'Authorization: Bearer %s\n' "$RN_TOKEN" |
+  curl --include --header @- "$RN_BASE_URL/api/v1/notebooks/$RN_NOTEBOOK_ID"
+```
+
+Expected: 204 with the archive's new ETag, followed by 404 on normal detail. Data, notes, history and grant rows are retained. Repeating archive with the returned current tag is 204; the old pre-archive tag is 412. Do not call refresh_notebook_etag after archive, because normal detail is now hidden. No unarchive/purge endpoint exists.
+
+When finished:
+
+```bash
+unset RN_TOKEN RN_RECIPIENT_TOKEN RN_EMAIL RN_FULL_NAME RN_TEAM_ID RN_CREATOR_ID RN_MEMBER_EMAIL RN_MEMBER_ID
+unset RN_NOTEBOOK_ID RN_NOTEBOOK_ETAG RN_STALE_NOTEBOOK_ETAG RN_SHARE_TEAM_ID
+unset -f refresh_notebook_etag
 ```
 
 ## Health and application info
@@ -223,4 +381,4 @@ Run `curl --include http://localhost:8081/api/v1/notes` (401 anonymously; 403 wi
 ## Persistence and remaining workflows
 The same operational endpoints now run with MySQL/Liquibase and JPA schema validation. Readiness includes database connectivity; health still hides component details.
 
-The [schema reference](Database-Schema-Reference.md#required-development-seed-dataset) lists the two admin users, sample identifiers and local-only demo password. Notebook/note CRUD, tags, comments, history/restore, search and activity HTTP operations remain unavailable. Their CURL workflows will be added alongside implementation rather than documenting nonexistent endpoints as working.
+The [schema reference](Database-Schema-Reference.md#required-development-seed-dataset) lists the two admin users, sample identifiers and local-only demo password. Note CRUD, tags, comments, history/restore, search and activity HTTP operations remain unavailable. Their CURL workflows will be added alongside implementation rather than documenting nonexistent endpoints as working.
