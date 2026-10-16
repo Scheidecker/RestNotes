@@ -59,6 +59,12 @@ public class SecurityConfiguration {
                             "/api/v1/auth/register", "/api/v1/auth/login").permitAll();
                     requests.requestMatchers(HttpMethod.GET, "/api/v1/users/me", "/api/v1/users/me/teams")
                             .authenticated();
+                    requests.requestMatchers(HttpMethod.GET,
+                            "/api/v1/teams", "/api/v1/teams/*", "/api/v1/teams/*/members").authenticated();
+                    requests.requestMatchers(HttpMethod.POST,
+                            "/api/v1/teams", "/api/v1/teams/*/members").authenticated();
+                    requests.requestMatchers(HttpMethod.PATCH, "/api/v1/teams/*/members/*").authenticated();
+                    requests.requestMatchers(HttpMethod.DELETE, "/api/v1/teams/*/members/*").authenticated();
                     requests.requestMatchers(
                             "/actuator/health", "/actuator/health/liveness",
                             "/actuator/health/readiness", "/actuator/info").permitAll();

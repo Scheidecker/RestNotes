@@ -15,6 +15,7 @@ Acceptance: clean initialization creates exactly the required two demo teams, th
 Suggested manual commit subject: `feat: add MySQL persistence and Liquibase migrations`.
 
 ## Phase 3 — Identity, teams, and authorization
+Status: implemented through team administration; awaiting review/manual commit before Phase 4.
 Scope: registration/login/JWT/profile, team creation/discovery, membership add/list/update/removal, authorization policies, last-admin protection, Problem Details, and page conventions.
 Include unit/MVC/integration security tests and matching CURL examples. No note routes are exposed with placeholder behavior.
 Acceptance: successful onboarding/authentication, invalid credentials/tokens rejected, team boundaries protected, and role changes effective immediately.

@@ -1,7 +1,7 @@
 # RestNotes
 Author: Carlos Scheidecker
 
-Spring Boot REST API for small-team notes. **Authentication increment:** registration, login, RS256 JWT validation, current-user profile and paginated team affiliations are implemented on top of MySQL/Liquibase persistence. Team-administration and note workflows remain denied pending their implementation.
+Spring Boot REST API for small-team notes. **Phase 3 — identity and teams:** registration/login, JWT security, profiles, team creation/discovery and membership administration are implemented on top of MySQL/Liquibase persistence. Notebook/note workflows remain denied pending Phase 4.
 
 ## Stack
 Java 25, Maven Wrapper 3.9.16, Spring Boot 4.1.1, Springdoc 3.1.1, Spring MVC, Validation, Security and Actuator. Spring dependency versions come from the Boot parent. The optional `spring-milestones` Maven profile declares the requested milestone repository with snapshots disabled; normal builds use Central.
@@ -40,6 +40,19 @@ Authentication endpoints:
 
 Use `Authorization: Bearer ...` for protected routes. Unknown/unimplemented routes remain denied (401 without authentication, 403 with a valid token). Basic/form login and cookie sessions are disabled. Swagger documents the new endpoints and bearer authorization. UAT/prod disable documentation by default. See the [CURL guide](docs/CURL_Guide.md) for the complete working onboarding/login sequence.
 
+Team administration endpoints (all require a bearer token):
+- `POST /api/v1/teams`: create a team and atomically become its ADMIN.
+- `GET /api/v1/teams?page=0&size=20`: list teams where you are currently a member.
+- `GET /api/v1/teams/{team_id}`: read a visible team and your current role.
+- `POST /api/v1/teams/{team_id}/members`: ADMIN adds a registered user by email with an explicit ADMIN/EDITOR/VIEWER role.
+- `GET /api/v1/teams/{team_id}/members?page=0&size=20`: members list team members and their roles.
+- `PATCH /api/v1/teams/{team_id}/members/{user_id}`: ADMIN changes a member's role.
+- `DELETE /api/v1/teams/{team_id}/members/{user_id}`: ADMIN removes a member.
+
+Every team must retain at least one ADMIN, including during concurrent requests. Membership writes lock the team first, re-check current membership roles, and commit activity metadata with the change. Admin status is team-specific; it does not grant access to other teams. No email invitation or global user search is involved.
+
+Collections use the stable page envelope and size limit 100. Team lists sort by name/ID; member lists by full name/user ID. Unknown/inaccessible resources return 404, insufficient role on a visible team returns 403, and duplicate membership/final-admin conflicts return 409 with a stable code. Team names need not be globally unique.
+
 ## Configuration
 All Spring configuration is in `src/main/resources/application.yml`.
 - SERVER_PORT: 8081, then platform PORT as fallback for a host-run JVM. In Compose, SERVER_PORT controls the host port; the container listens on 8081.
@@ -77,7 +90,7 @@ Never store real secrets in Git, logs, images or command-line literals. `.env.ex
 - `./mvnw checkstyle:check`: source style checks.
 - `docker compose config --quiet`: validate container configuration without rendering values.
 
-Tests cover JWT claims/signatures/key policies, registration/login and duplicate races, input limits, profile isolation/live memberships and production registration defaults, plus all persistence/operational checks from earlier phases. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
+Tests cover JWT policies, onboarding and duplicate races, team authorization/isolation, current-role changes, paginated discovery/members, transaction rollback and concurrent last-admin changes, plus all earlier persistence/operational checks. Testcontainers use the same pinned MySQL image as Compose and isolated disposable storage. H2 is not used.
 
 ## Required demo data — Phase 2
 Liquibase pre-populates exactly two isolated teams when demo mode is explicitly enabled:
@@ -91,13 +104,14 @@ Each sample note has an initial history snapshot and activity entry. Demo change
 - [Database schema reference](docs/Database-Schema-Reference.md)
 - [Quick start](docs/Quick_start.md)
 - [CURL guide for currently implemented operations](docs/CURL_Guide.md)
+- [Implementation phases](docs/implementation-phases.md)
 
 Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deployment.md`, `Step-by-step-usage-manual.md`, and `SYSTEM_MANUAL.md` under docs/. PlantUML component, class and sequence sources and rendered SVGs will live under docs/diagrams/ as the domain is implemented.
 
 ## Review gates
 1. Foundation — completed.
 2. Persistence, Liquibase and demo fixtures — completed.
-3. Identity/security — this increment; team administration and role-management services still pending.
+3. Identity, teams and role enforcement — completed in this increment.
 4. Notebooks/notes, tags, archive and concurrency.
 5. Comments, history restore, search and activity.
 6. Release validation and complete deployment/usage manuals.

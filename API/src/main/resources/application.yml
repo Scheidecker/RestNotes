@@ -78,7 +78,7 @@ info:
   app:
     name: RestNotes
     author: Carlos Scheidecker
-    phase: authentication
+    phase: identity-and-teams
 
 restnotes:
   demo:

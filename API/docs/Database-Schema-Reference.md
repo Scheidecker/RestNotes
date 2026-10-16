@@ -21,7 +21,7 @@ Never edit a changeset that has been applied to a persistent database. Add forwa
 - `note_history`: unique positive `(note_id, version_number)`, immutable title/content/pinning/tag-name JSON snapshot, editor and timestamp.
 - `activity_logs`: immutable team/user/action/entity metadata and timestamp; no note contents or secrets.
 
-All UUIDs use ordinary BINARY(16) bytes: SQL `UUID_TO_BIN(uuid)` without byte swapping matches Hibernate. References use explicit UUID fields rather than bidirectional entity collections. Foreign keys enforce existence; membership-based authorization and last-admin protection still require services in later phases.
+All UUIDs use ordinary BINARY(16) bytes: SQL `UUID_TO_BIN(uuid)` without byte swapping matches Hibernate. References use explicit UUID fields rather than bidirectional entity collections. Foreign keys enforce existence; team services now enforce membership authorization and last-admin protection under a team-row lock.
 
 All timestamps use UTC DATETIME(6) and application-assigned microsecond Instants. `version` is an optimistic concurrency token, not the history sequence. Content is MEDIUMTEXT with a 256 KiB byte check; comment length is 1–10,000 characters. Tags are normalized and unique per team.
 

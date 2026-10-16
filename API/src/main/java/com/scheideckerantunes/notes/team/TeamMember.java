@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import java.util.Objects;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -47,6 +48,10 @@ public class TeamMember {
 
     public TeamRole getRole() {
         return role;
+    }
+
+    public void changeRole(TeamRole role) {
+        this.role = Objects.requireNonNull(role);
     }
 
     public Instant getJoinedAt() {

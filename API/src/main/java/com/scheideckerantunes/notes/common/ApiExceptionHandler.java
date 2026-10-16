@@ -2,6 +2,7 @@ package com.scheideckerantunes.notes.common;
 
 import com.scheideckerantunes.notes.auth.DuplicateAccountException;
 import com.scheideckerantunes.notes.auth.RegistrationDisabledException;
+import com.scheideckerantunes.notes.team.TeamConflictException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -31,6 +32,22 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DuplicateAccountException.class)
     ProblemDetail duplicate(HttpServletRequest request) {
         return ApiProblems.create(HttpStatus.CONFLICT, "An account with this email already exists", request);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    ProblemDetail notFound(HttpServletRequest request) {
+        return ApiProblems.create(HttpStatus.NOT_FOUND, "Resource not found", request);
+    }
+
+    @ExceptionHandler(TeamConflictException.class)
+    ProblemDetail teamConflict(TeamConflictException exception, HttpServletRequest request) {
+        String detail = switch (exception.getCode()) {
+            case MEMBER_ALREADY_EXISTS -> "User is already a member of this team";
+            case LAST_TEAM_ADMIN -> "A team must retain at least one ADMIN";
+        };
+        ProblemDetail problem = ApiProblems.create(HttpStatus.CONFLICT, detail, request);
+        problem.setProperty("code", exception.getCode().name());
+        return problem;
     }
 
     @ExceptionHandler(RegistrationDisabledException.class)

@@ -3,7 +3,7 @@ services:
   api:
     build:
       context: .
-    image: restnotes:phase3-auth
+    image: restnotes:phase3
     depends_on:
       mysql:
         condition: service_healthy
