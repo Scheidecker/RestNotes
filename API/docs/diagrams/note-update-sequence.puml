@@ -1,0 +1,78 @@
+@startuml note-update-sequence
+' Author: Carlos Scheidecker
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+hide footbox
+title RestNotes - conditional note update and atomic snapshot
+footer Author: Carlos Scheidecker
+autonumber
+
+actor Client
+boundary NoteController as Api
+control NoteService as Service
+control "LockedNotes\nNoteWriteAccess" as Access
+control NoteLocks as Guard
+participant "NoteLockStore\nJDBC" as Store
+participant "JPA repositories /\nEntityManager" as Jpa
+database MySQL as Db
+
+note over Client,Api
+  Bearer authentication and DTO/body validation occur first.
+  Existing-note PUT/PATCH and tag writes share this guard.
+end note
+Client -> Api : PATCH /notes/{id}\nIf-Match + optional Note-Lock-Token
+Api -> Service : patch(note, actor, condition, DTO, token)
+group Spring write transaction - READ_COMMITTED / timeout 15s
+  Service -> Access : require authorized current note
+  Access -> Jpa : scalar scope / candidate access paths
+  Jpa -> Db : scoped lookups (avoid stale managed entity)
+  Access -> Jpa : lock sorted owner/access-path teams\nthen notebook; refresh capabilities
+  Jpa -> Db : current locking reads
+  Access -> Jpa : lock + refresh note
+  Jpa -> Db : SELECT FOR UPDATE
+  Access -> Access : require EDITOR-or-higher\ncheck archive and caller-scoped note ETag
+  alt inaccessible / insufficient role / invalid condition
+    Access --> Service : 404 / 403 / 428 / 400 / 412\nor 409 ACCESS_CHANGED
+    Service -> Db : rollback / release locks
+    Service --> Api : static Problem Details
+    Api --> Client : failed request; no mutation
+  else authorized and current
+    Access --> Service : locked note + notebook capability
+    Service -> Guard : requireWrite(note, actor, token)
+    Guard -> Guard : validate token format\nreject malformed input before lease query
+    Guard -> Store : now() and find(noteId)
+    Store -> Db : database UTC time AFTER locks\nread lease metadata / digest
+    Db --> Store : deadline / owner / verifier
+    Store --> Guard : lease or absent
+    Guard -> Guard : check expiry / owner\nconstant-time digest comparison
+    alt missing active-holder credential / stale token
+      Guard --> Service : 423 / 409 (malformed token: 400)
+      Service -> Db : rollback / release locks
+      Service --> Api : static Problem Details
+      Api --> Client : no content/history/activity change
+    else write permitted
+      Guard --> Service : allowed (unlocked or valid holder)
+      Service -> Service : validate patch semantics / content bytes
+      alt unchanged representation
+        Service -> Db : commit without aggregate changes
+        Service --> Api : unchanged NoteResponse / ETag
+      else real content or pinning change
+        Service -> Jpa : apply changes / flush note version
+        Jpa -> Db : UPDATE notes
+        Service -> Jpa : latest history version + 1\nsave immutable snapshot with sorted tags
+        Jpa -> Db : INSERT note_history
+        Service -> Jpa : save NOTE_UPDATED activity
+        Jpa -> Db : INSERT activity_logs (flush by commit)
+        Service -> Db : commit ALL changes / release locks
+        Service --> Api : NoteResponse / updated ETag
+      end
+      Api --> Client : 200 after successful transaction commit
+    end
+  end
+end
+note over Service,Db
+  Any validation/persistence/commit failure rolls back the whole transaction.
+  JPA row version and history sequence are independent.
+  Archive records activity without a duplicate snapshot and removes its lease.
+end note
+@enduml

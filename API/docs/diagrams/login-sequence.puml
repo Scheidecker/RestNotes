@@ -1,0 +1,61 @@
+@startuml login-sequence
+' Author: Carlos Scheidecker
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+hide footbox
+title RestNotes - login and subsequent bearer validation
+footer Author: Carlos Scheidecker
+autonumber
+
+actor Client
+boundary "AuthenticationController" as Api
+control "AuthenticationService" as Auth
+control "Spring AuthenticationManager\nDaoAuthenticationProvider" as Manager
+participant "UserAccountRepository" as Users
+database MySQL as Db
+control "TokenService\nJwtEncoder" as Tokens
+control "Security filter chain\nJwtDecoder" as Security
+
+Client -> Api : POST /api/v1/auth/login\nemail/password (never logged)
+Api -> Auth : validated LoginRequest
+Auth -> Manager : authenticate(normalized email, password)
+Manager -> Users : findByEmail
+Users -> Db : SELECT account / BCrypt hash
+Db --> Users : account or absent
+Users --> Manager : UserDetails or not found
+Manager -> Manager : BCrypt verification / failure mitigation
+alt invalid credentials
+  Manager --> Auth : AuthenticationException
+  Auth --> Api : generic failure
+  Api --> Client : 401 Problem Details\nno account-existence disclosure
+else authenticated
+  Manager --> Auth : authenticated UUID principal
+  Auth -> Tokens : issue(user UUID)
+  Tokens -> Tokens : sign RS256 JWT\nissuer / audience / iat / exp / jti
+  Tokens --> Auth : TokenResponse
+  Auth --> Api : access token + expiry metadata
+  Api --> Client : 200 / Cache-Control: no-store
+end
+
+== Later protected request ==
+Client -> Security : Authorization: Bearer token
+Security -> Security : verify RS256 / issuer / audience / time\ncanonical UUID subject
+alt invalid signature or claims
+  Security --> Client : 401 before controller
+else valid signature and claims
+  Security -> Users : existsById(subject)
+  Users -> Db : current account existence
+  Db --> Users : yes / no
+  Users --> Security : current identity result
+  alt account absent
+    Security --> Client : 401 before controller
+  else valid identity
+    Security -> Security : dispatch allowed route\nno authoritative JWT roles
+    note right of Security
+      Feature services still check current
+      memberships/grants and resource visibility.
+      Valid identity alone grants no team access.
+    end note
+  end
+end
+@enduml

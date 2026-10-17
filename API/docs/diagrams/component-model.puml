@@ -1,0 +1,61 @@
+@startuml component-model
+' Author: Carlos Scheidecker
+!pragma layout smetana
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam defaultFontName SansSerif
+top to bottom direction
+title RestNotes - implemented component model
+footer Author: Carlos Scheidecker
+
+actor "API consumer\ncurl / Swagger" as Client
+rectangle "One Spring Boot application / JVM" {
+  component "Spring Security\nRS256 bearer validation\nDefault-deny routes" as Security
+  component "Feature controllers\nDTO validation / ETags" as Http
+  component "Identity and teams\nAuthenticationService\nUserProfileService / TeamService" as Identity
+  component "Notebooks and sharing\nNotebookService\nNotebookAuthorization" as Books
+  component "Notes and tags\nNoteService\nLockedNotes / NoteWriteAccess" as Notes
+  component "Editing leases\nNoteLockService / NoteLocks\nNoteLockTokens" as Leases
+  component "Spring Data JPA\nEntityManager / repositories" as Jpa
+  component "NoteLockStore\nJdbcTemplate" as Jdbc
+  component "Spring transactions\nHikariCP datasource" as Tx
+  component "Liquibase\nStartup migrations" as Migrations
+  component "Operations / documentation\nActuator / Springdoc" as Ops
+}
+database "MySQL 8.4.11\nDomain + history + activity\nnote_locks" as Db
+artifact "Signing key material\nEphemeral dev/test OR\nexternal matching PEM files" as Keys
+artifact "Persistent database volume\nLocal Compose" as Volume
+
+Client --> Security : business HTTP
+Security --> Http : validated identity
+Security --> Jpa : current account exists
+Security ..> Keys : signature verification
+Identity ..> Keys : JWT signing via TokenService
+Http --> Identity
+Http --> Books
+Http --> Notes
+Http --> Leases
+Identity --> Jpa
+Books --> Jpa
+Notes --> Jpa
+Notes --> Leases : lease guard
+Leases --> Notes : shared locked-note helper
+Leases --> Jdbc
+Jpa --> Tx
+Jdbc --> Tx : same transaction / connection
+Tx --> Db
+Migrations --> Db : DDL / optional demo seed
+Db --> Volume
+Client --> Ops : permitted health / docs paths
+Ops ..> Tx : readiness includes DB
+
+note bottom of Notes
+  Boxes are logical components, not microservices.
+  History/activity writes are internal to feature transactions.
+  Comment/history/search/activity REST is not implemented.
+end note
+note bottom of Migrations
+  Protected environments normally migrate separately.
+  No root credential enters the API.
+end note
+@enduml

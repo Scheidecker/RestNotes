@@ -1,0 +1,76 @@
+@startuml lease-lifecycle-sequence
+' Author: Carlos Scheidecker
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+hide footbox
+title RestNotes - editing lease acquisition, renewal and release
+footer Author: Carlos Scheidecker
+autonumber
+
+actor "Authenticated editor" as Client
+control "NoteLockService" as Service
+control "LockedNotes /\nNoteWriteAccess" as Access
+participant "NoteLockStore /\nJdbcTemplate" as Store
+database MySQL as Db
+
+note over Client,Service
+  NoteLockController maps responses and applies Cache-Control: no-store.
+  Service transaction proxy commits before an HTTP success is returned.
+end note
+Client -> Service : POST /notes/{id}/lock\ncurrent note If-Match; optional token
+group READ_COMMITTED / timeout 15s
+  Service -> Access : require current editor + note If-Match
+  Access -> Db : lock sorted teams -> notebook -> note\nrefresh current grants / roles / archive state
+  Access --> Service : authorized locked state (or fail)
+  Service -> Service : validate supplied token format
+  Service -> Store : now() then find(noteId)
+  Store -> Db : UTC_TIMESTAMP(6); SELECT lease
+  Db --> Store : current lease / absent
+  Store --> Service : owner / digest / deadline
+  alt absent or expired AND no supplied token
+    Service -> Service : generate fresh random 256-bit token\nSHA-256 digest; deadline = DB now + 300s
+    Service -> Store : acquire(note, owner, digest, times)
+    Store -> Db : delete old row if present; insert generation
+    Service -> Db : commit
+    Service --> Client : 200 / unchanged note ETag\nmetadata + initial token (only time returned)
+  else active lease AND matching owner/token
+    Service -> Service : constant-time verifier comparison
+    Service -> Store : renew(deadline = DB now + 300s)
+    Store -> Db : UPDATE expires_at
+    Service -> Db : commit
+    Service --> Client : 200 / metadata; no new token\nkeep original credential
+  else active lease with different actor or missing token
+    Service -> Db : rollback / release locks
+    Service --> Client : 423 NOTE_LOCKED
+  else expired / replaced supplied token
+    Service -> Db : rollback / release locks
+    Service --> Client : 409 STALE_LOCK_TOKEN
+  end
+end
+
+== Release (same authorized locking order) ==
+Client -> Service : DELETE /notes/{id}/lock\ncurrent note If-Match + holder token
+Service -> Access : require editor / note condition; retain locks
+Access --> Service : current state
+Service -> Store : database now + current lease
+Store -> Db : UTC time; SELECT lease
+Db --> Store : current lease / absent
+Store --> Service : lease state
+alt valid holder OR unlocked with no token
+  Service -> Store : delete(noteId)
+  Store -> Db : DELETE note_locks
+  Service -> Db : commit
+  Service --> Client : 204 / unchanged note ETag
+else invalid ownership or stale supplied token
+  Service -> Db : rollback
+  Service --> Client : 423 / 409 (format errors: 400)
+end
+
+note over Client,Db
+  All operations first retain live access and ETag requirements.
+  No note version, content history or activity is changed by lease-only actions.
+  The note mutex serializes missing-row acquisition and takeover across replicas.
+  Expiry is exclusive; a lost initial token cannot be recovered from GET status.
+  Revoked holders cannot renew; remaining editors may wait until expiry.
+end note
+@enduml

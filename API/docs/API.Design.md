@@ -5,6 +5,7 @@ Author: Carlos Scheidecker
 One Java 25 Spring Boot application, one Maven module, package `com.scheideckerantunes.notes`. Identity/teams, notebooks/sharing, note CRUD/pinning, tags and optional editing leases are implemented. Comments, history/restore, search and activity REST remain unavailable.
 
 Business paths below are relative to `/api/v1`. See the [project structure](../README.md#project-structure) for package responsibilities and the [CURL guide](CURL_Guide.md) for complete request sequences.
+The [architecture document](architecture.md) provides the component/class models and rendered login, conditional-write and lease-lifecycle sequences; this document remains the detailed API contract.
 
 Health/probes/info, dev/test documentation, and POST register/login permit anonymous requests. Implemented profile/team/notebook/note routes require bearer authentication; other routes default-deny. Basic/form login and cookie sessions are disabled. CSRF is disabled for header-bearer authentication; revisit it if cookies are introduced. No cross-origin policy is enabled. Health hides components and Actuator exposure is not wildcarded.
 

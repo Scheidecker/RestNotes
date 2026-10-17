@@ -8,6 +8,53 @@ Java 25, Maven Wrapper 3.9.16, Spring Boot 4.1.1, Springdoc 3.1.1, Spring MVC, V
 
 Persistence uses Data JPA, MySQL 8.4.11, Liquibase Community 5.0.4 and Testcontainers 2.0.5. The Liquibase override of Boot's 5.0.3 has passed real-MySQL tests. Spring Security's supported RSA JWT encoder/decoder and password authentication provider implement identity without a separate authentication service.
 
+## Most Time Consuming design choices
+These are the three areas that required the most design and validation effort, based on implementation complexity rather than recorded hours.
+
+### 1. Tenant isolation and live authorization across shared notebooks
+I chose to authorize every operation from current database memberships and grants instead of putting authoritative roles in JWTs. An ADMIN is an administrator of a team, not of the whole system. Shared notebook access is capped by both the grant and the recipient's membership role, and multiple legitimate access paths must combine without leaking data or counts.
+
+The time-consuming part was making those rules consistent across reads, pagination, nested resources and concurrent writes, including membership downgrades and revoked shares. I made this choice because stale permissions or one insufficiently scoped query could expose another team's notes. Immediate authorization changes and generic inaccessible-resource responses matter more than simplifying permissions into long-lived token claims.
+
+### 2. Concurrency, editing leases and atomic content history
+I chose to keep ETags/If-Match even after adding optional editing leases. A lease coordinates editors; an ETag detects stale content or changed notebook permissions. Neither replaces the other. Writes use a consistent team → notebook → note lock order, and real content/tag changes commit their snapshot and activity together.
+
+The difficult work was handling competing edits, lock acquisition and expiry, stale-token fencing, no-op requests, archive behavior and rollback across JPA note writes and JDBC lease storage. I made these choices to prevent lost updates, duplicate history versions, stranded in-memory locks and partially recorded changes across application replicas. The five-minute lease limits abandonment without requiring Redis, a scheduler or real-time co-editing infrastructure.
+
+### 3. Reproducible persistence, upgrades and realistic verification
+I chose Liquibase-owned, additive migrations and real-MySQL integration tests rather than Hibernate-generated schema or an H2 substitute. Existing volumes must upgrade without resetting user changes, while development seed data must remain explicit, repeatable and forbidden in protected environments.
+
+The time-consuming part was validating migration identities/checksums, binary UUIDs, UTC timestamps, collation-equivalent tags, foreign keys, concurrent transactions and restart behavior against the same pinned MySQL image used locally. I made this choice because a fast test suite that behaves differently from the deployed database can hide exactly the failures that matter most. Docker builds, host integration tests and disposable HTTP checks provide complementary evidence, not interchangeable shortcuts.
+
+### Why Java 25, Spring Boot and MySQL?
+- **Java 25:** I chose a modern LTS Java baseline for strong typing, maintainable domain code, mature tooling and a supported JVM ecosystem. Records suit explicit API DTOs, and the JVM offers established diagnostics for a long-lived service. The project does not depend on preview features or claim to enable virtual threads automatically; support duration and patching still depend on the chosen JDK distribution.
+- **Spring Boot:** I chose its integrated Web MVC, Validation, Security, transaction, persistence and operational support so I could focus on domain rules instead of assembling an HTTP/security framework. Boot-managed dependencies reduce compatibility drift, Spring Security supplies supported password/JWT components, and Actuator/Springdoc make the API easier to operate and inspect. Framework defaults do not replace tenant authorization or security testing.
+- **MySQL 8.4 LTS:** I chose a relational database because teams, memberships, notebook ownership, tag associations and history have strong relationships and transactional invariants. InnoDB transactions, row locks, foreign keys and unique constraints support those requirements directly. Existing full-text indexing offers a path to search without another service, although the search REST API is not yet implemented. Docker availability and managed-cloud options also keep local and future deployment paths practical.
+
+Together, this stack supports one feature-organized application and one transactional source of truth. I deliberately avoided microservices, distributed caches and event infrastructure until operational evidence justifies their cost.
+
+## What Would I change add or stop doing if I had time
+These are future improvements, not capabilities already implemented.
+
+### User experience and identity
+- **Build a full Angular UX for desktop and PWA use.** I would add responsive notebook/note navigation, an accessible Markdown editor, tag management, clear lock ownership/expiry and conflict-resolution screens. A PWA would need explicit offline-sync rules for ETags and leases, careful handling of cached sensitive notes, and sanitized Markdown rendering. Angular/Node.js are not dependencies of the current API.
+- **Complete authentication with MFA and OAuth 2.0 integrations.** I would prefer a maintained identity provider with MFA/passkeys, recovery and account lifecycle management rather than building those protocols myself. OAuth 2.0 handles delegated authorization; OpenID Connect supplies standardized sign-in identity where supported, such as Google. GitHub OAuth would need its provider-specific identity/account-linking flow. An Angular client should use an appropriate authorization-code/PKCE flow and a reviewed token/session-storage design, not blindly treat an external access token as a RestNotes token.
+- **Separate reusable identity concerns when the company portfolio needs them.** I would establish clearer identity, registration and authorization subdomains: a shared identity/authentication and authorization-policy API, plus a registration/provisioning API, could serve multiple company applications. I would keep stable external subject IDs and explicit profile-data ownership instead of sharing application database tables. Note/team-specific authorization must still be enforced at the RestNotes resource boundary. I would extract services only when reuse, independent deployment or security boundaries justify them, rather than creating one microservice per endpoint.
+
+### Security and integrity
+- **Create a repeatable security assessment and detection checklist.** For potentially sensitive users and notes, I would define a threat model, data classification and an OWASP ASVS-based control baseline; review tenant isolation; run dependency/secret/static/dynamic scans; commission authorized penetration testing; and test authentication abuse, privilege escalation and object-level access. I would add actionable intrusion/anomaly detection, alerting, incident response and periodic reassessment. No application can honestly be promised to be “hacker-proof”; the goal is measurable risk reduction and tested response.
+- **Add a note checksum/verification field and per-revision integrity metadata.** I would define a canonical payload containing note identity/version, content and other protected fields, then store and verify its integrity value to detect changes made outside the application. A plain checksum stored beside the note helps detect accidental changes but does not prove that a database attacker changed nothing: that attacker may recompute both. For malicious-tampering detection, I would evaluate HMACs or digital signatures with keys held outside the database, key/version rotation and independently protected audit records. Existing ETags are concurrency validators, not cryptographic integrity proofs.
+- **Stop treating local-demo practices as deployment defaults.** I would use externally managed identities/secrets, stable signing keys with a tested rotation policy, HTTPS, edge throttling and separate least-privilege migration/runtime database accounts. I would never expose demo accounts or enable verbose credential/body logging in a shared environment.
+
+### Other production priorities
+- Finish access-aware comments, history retrieval/restore, search and activity endpoints before describing the collaboration feature set as complete. A restore must reuse ETag and lease checks and append history.
+- Add CI gates for clean real-MySQL tests, reproducible image builds, dependency/container scanning, SBOMs, secret scanning and reviewed upgrades. Add coverage measurement and explicit security/performance regression targets.
+- Define availability and latency objectives; add metrics, traces and sanitized structured logs, then load-test connection-pool budgets, lock contention and large tenant datasets before scaling replicas or adding caches.
+- Implement encrypted backups, point-in-time recovery where supported, restore drills, documented RPO/RTO targets and rehearsed migration/rollback procedures.
+- Add privacy/retention rules, export and deletion workflows, auditable administrative actions and disaster/incident runbooks appropriate to the data's sensitivity. Content activity records alone are not a complete security audit trail.
+- Review CORS, CSRF/session design, content security and browser storage when the Angular/PWA client is introduced; the current header-bearer API configuration should not be copied into a cookie-based UI without reassessment.
+- Stop duplicating identity data and stop adding infrastructure speculatively. Prefer clear module contracts and measured bottlenecks over premature service extraction or optimization.
+
 ## Project structure
 One application/module/database, organized by feature under `src/main/java/com/scheideckerantunes/notes/`:
 - `auth/`, `user/`, `team/`: authentication/profiles, team membership and role enforcement.
@@ -21,7 +68,8 @@ One application/module/database, organized by feature under `src/main/java/com/s
 The locking code lives in `note/`: LockedNotes shares authorization/ETag locking, NoteLockService handles lifecycle, NoteLocks enforces holder credentials, NoteLockStore joins JDBC lease writes to JPA transactions, and NoteLockTokens handles generation/verification. Controllers expose DTOs rather than persistence entities.
 
 ## Run locally
-Prerequisites: JDK 25 and unzip (or Expand-Archive on Windows); first build requires network access to Maven Central. The wrapper pins the Maven ZIP SHA-256, so unzip is required on Unix.
+For a clean-machine checklist and step-by-step GitHub-to-running-service instructions, see [system requirements and setup](docs/system-requirements.md). For implemented capabilities and use cases, see the [features summary](docs/features-summary.md).
+For host-JVM development, prerequisites are JDK 25 and unzip (or Expand-Archive on Windows); the first build requires network access to Maven Central. The wrapper pins the Maven ZIP SHA-256, so unzip is required on Unix. Container-only startup does not require a host JDK or Maven.
 
 The easiest supported path is the two-service Compose startup below. A host-run JVM needs an existing MySQL RestNotes database reachable using DB_URL, DB_USERNAME and DB_PASSWORD. Defaults are localhost:3306/RestNotes and the request's development APIUser credentials. Compose intentionally does not publish MySQL to the host; use an explicit loopback-only port override if host-run development is needed.
 
@@ -159,13 +207,16 @@ Liquibase pre-populates exactly two isolated teams when demo mode is explicitly 
 Each sample note has an initial history snapshot and activity entry. Demo changesets do not duplicate/reset records on restart. See the [schema reference](docs/Database-Schema-Reference.md#required-development-seed-dataset) for identifiers and local-only credentials. The two teams start isolated until an owner ADMIN explicitly shares a notebook. Seeded notes can now be read/edited using the note endpoints.
 
 ## Documentation
+- [Architecture, component/class models and sequence diagrams](docs/architecture.md)
+- [System requirements and step-by-step setup](docs/system-requirements.md)
+- [Features, technology stack and use cases](docs/features-summary.md)
 - [API design](docs/API.Design.md)
 - [Database schema reference](docs/Database-Schema-Reference.md)
 - [Quick start](docs/Quick_start.md)
 - [CURL guide for currently implemented operations](docs/CURL_Guide.md)
 - [Implementation phases](docs/implementation-phases.md)
 
-Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deployment.md`, `Step-by-step-usage-manual.md`, and `SYSTEM_MANUAL.md` under docs/. PlantUML component, class and sequence sources and rendered SVGs will live under docs/diagrams/ as the domain is implemented.
+PlantUML component, class and sequence sources plus rendered SVGs are available under `docs/diagrams/`, embedded and explained in the [architecture document](docs/architecture.md). Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deployment.md`, `Step-by-step-usage-manual.md`, and `SYSTEM_MANUAL.md` under docs/.
 
 ## Review gates
 1. Foundation — completed.

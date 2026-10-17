@@ -14,6 +14,7 @@ Migration `004-notebook-sharing` adds notebook_shares and extends the activity a
 Migration `005-note-locks` adds optional editing leases without rewriting applied schema/demo/sharing changesets. Upgrade tests cover both pre-sharing and pre-lease schemas, preserving existing content/shares and seed identities. Existing volumes upgrade normally; do not reset them.
 
 ## Tables
+See the [architecture class model](architecture.md#4-domain-class-view-and-persistence-invariants) for a visual relationship view and the distinction between mapped entities and JDBC lease storage.
 - `users`: normalized unique email, BCrypt password hash, display name and timestamps.
 - `teams`: name/description, timestamps and optimistic version.
 - `team_members`: composite team/user key, constrained ADMIN/EDITOR/VIEWER role and joined timestamp.

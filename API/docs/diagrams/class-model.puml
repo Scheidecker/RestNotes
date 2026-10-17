@@ -1,0 +1,119 @@
+@startuml class-model
+' Author: Carlos Scheidecker
+!pragma layout smetana
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+hide empty methods
+top to bottom direction
+title RestNotes - domain classes and JDBC lease projection
+footer Author: Carlos Scheidecker
+
+package "Identity and teams" {
+  class UserAccount {
+    email : String
+    passwordHash : String
+    fullName : String
+  }
+  class Team {
+    name : String
+    description : String
+  }
+  class TeamMember {
+    id : TeamMemberId
+    role : TeamRole
+    joinedAt : Instant
+  }
+  enum TeamRole {
+    ADMIN
+    EDITOR
+    VIEWER
+  }
+}
+package "Notebooks and notes" {
+  class Notebook {
+    teamId : UUID
+    title : String
+    createdBy : UUID
+    archivedAt : Instant
+  }
+  class NotebookShare {
+    id : NotebookShareId
+    accessLevel : ShareAccessLevel
+  }
+  enum ShareAccessLevel {
+    VIEWER
+    EDITOR
+  }
+  class Note {
+    notebookId : UUID
+    teamId : UUID
+    title : String
+    content : String
+    pinned : boolean
+    createdBy / updatedBy : UUID
+    archivedAt : Instant
+  }
+  class Tag {
+    teamId : UUID
+    normalizedName : String
+  }
+  class NoteTag {
+    id : NoteTagId
+    teamId : UUID
+  }
+}
+package "History, activity and leases" {
+  class NoteHistory <<immutable entity>> {
+    noteId : UUID
+    versionNumber : int
+    title / content : String
+    pinned : boolean
+    tagsSnapshot : JSON
+    modifiedBy : UUID
+  }
+  class ActivityLog <<immutable entity>> {
+    teamId / userId : UUID
+    action / entityType : String
+    entityId : UUID
+  }
+  class NoteComment <<persistence only>> #FFF2CC {
+    noteId / userId : UUID
+    content : String
+  }
+  class "NoteLockStore.Lease" as Lease <<JDBC record>> {
+    ownerId : UUID
+    digest : String
+    acquiredAt : Instant
+    expiresAt : Instant
+    active(at) : boolean
+  }
+}
+
+UserAccount "1" -- "0..*" TeamMember : userId
+Team "1" -- "0..*" TeamMember : teamId
+TeamMember ..> TeamRole
+Team "1" -- "0..*" Notebook : owns
+Notebook "1" -- "0..*" NotebookShare
+Team "1" -- "0..*" NotebookShare : recipient
+NotebookShare ..> ShareAccessLevel
+Notebook "1" -- "0..*" Note : owns
+Team "1" -- "0..*" Tag : catalog
+Note "1" -- "0..*" NoteTag
+Tag "1" -- "0..*" NoteTag
+Note "1" -- "1..*" NoteHistory : service-created snapshots
+Team "1" -- "0..*" ActivityLog
+Note "1" -- "0..*" NoteComment
+Note "1" -- "0..1" Lease : lookup by noteId
+UserAccount "1" -- "0..*" Lease : holder
+
+legend bottom
+  Author: Carlos Scheidecker
+  Selected fields only; common UUID/timestamp/version bases are omitted.
+  Lines express UUID/FK relationships, NOT bidirectional JPA object collections.
+  Composite keys: TeamMemberId(teamId,userId), NotebookShareId(notebookId,sharedWithTeamId),
+  NoteTagId(noteId,tagId). Composite FKs enforce same-team notebook/note/tag ownership.
+  Lease is a JDBC projection of note_locks, not a JPA entity; note_id is the table key.
+  NoteHistory's initial snapshot is a service invariant, not a minimum-row SQL constraint.
+  Comment REST and history/activity read/restore REST remain deferred.
+endlegend
+@enduml
