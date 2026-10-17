@@ -114,6 +114,6 @@ The [README validation baseline](../README.md#validation) records 184 passing te
 - MFA, OAuth 2.0/OIDC federation, account recovery/verification, refresh/logout or company-wide identity APIs.
 - Public links, individual-user ACLs, invitations, notifications and note ownership transfer.
 - Independent note integrity signatures/checksums, full security auditing and intrusion detection.
-- Complete cloud deployment/usage/system manuals, backup/restore automation, load-tested capacity and a complete production security/compliance program.
+- Live-validated cloud deployments, complete usage/system manuals, backup/restore automation, load-tested capacity and a complete production security/compliance program. The [GCP](GCP_Deployment.md) and [AWS](AWS_Deployment.md) runbooks are now available, but provisioning/rehearsal has not been performed by writing them.
 
 Existing safeguards do not make this demo a fully production-ready or “hacker-proof” product. See [future improvements](../README.md#what-would-i-change-add-or-stop-doing-if-i-had-time) and [implementation phases](implementation-phases.md) for the intended next work.

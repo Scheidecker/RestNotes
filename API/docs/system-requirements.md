@@ -156,3 +156,4 @@ Expect Java 25 and Maven 3.9.16. `test` runs database-independent tests and styl
 To run the JVM directly rather than just test it, provision a reachable MySQL RestNotes database/non-root account and set DB_URL/DB_USERNAME/DB_PASSWORD as described in the [README](../README.md#run-locally). The default Compose configuration intentionally does not expose MySQL to a host JVM. Host-run dev loads fixtures only when DEMO_DATA_ENABLED=true.
 
 See [features summary](features-summary.md), [API design](API.Design.md) and [implementation phases](implementation-phases.md) for implemented scope and remaining production work.
+For a separately approved managed-cloud deployment, use the [GCP](GCP_Deployment.md) or [AWS](AWS_Deployment.md) runbook rather than exposing this local Compose stack as if it were production-hardened.

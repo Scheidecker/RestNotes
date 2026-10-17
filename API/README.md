@@ -207,6 +207,8 @@ Liquibase pre-populates exactly two isolated teams when demo mode is explicitly 
 Each sample note has an initial history snapshot and activity entry. Demo changesets do not duplicate/reset records on restart. See the [schema reference](docs/Database-Schema-Reference.md#required-development-seed-dataset) for identifiers and local-only credentials. The two teams start isolated until an owner ADMIN explicitly shares a notebook. Seeded notes can now be read/edited using the note endpoints.
 
 ## Documentation
+- [Google Cloud Platform deployment — Cloud Run and Cloud SQL](docs/GCP_Deployment.md)
+- [AWS deployment — ECS Fargate, ALB and RDS](docs/AWS_Deployment.md)
 - [Architecture, component/class models and sequence diagrams](docs/architecture.md)
 - [System requirements and step-by-step setup](docs/system-requirements.md)
 - [Features, technology stack and use cases](docs/features-summary.md)
@@ -216,7 +218,7 @@ Each sample note has an initial history snapshot and activity entry. Demo change
 - [CURL guide for currently implemented operations](docs/CURL_Guide.md)
 - [Implementation phases](docs/implementation-phases.md)
 
-PlantUML component, class and sequence sources plus rendered SVGs are available under `docs/diagrams/`, embedded and explained in the [architecture document](docs/architecture.md). Planned manuals, to be linked when authored: `GCP_Deployment.md`, `AWS_Deployment.md`, `Step-by-step-usage-manual.md`, and `SYSTEM_MANUAL.md` under docs/.
+PlantUML component, class and sequence sources plus rendered SVGs are available under `docs/diagrams/`, embedded and explained in the [architecture document](docs/architecture.md). The cloud guides are reviewed runbooks/templates, not evidence of a live tested deployment; executing them requires separate approval and a staging rehearsal. Remaining planned manuals: `Step-by-step-usage-manual.md` and `SYSTEM_MANUAL.md` under docs/.
 
 ## Review gates
 1. Foundation — completed.
