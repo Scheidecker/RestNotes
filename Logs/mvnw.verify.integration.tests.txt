@@ -1,0 +1,584 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.scheideckerantunes:restnotes >------------------
+[INFO] Building RestNotes 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- checkstyle:3.6.0:check (source-style) @ restnotes ---
+[INFO] Starting audit...
+Audit done.
+[INFO] You have 0 Checkstyle violations.
+[INFO] 
+[INFO] --- spring-boot:4.1.1:build-info (default) @ restnotes ---
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ restnotes ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 6 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ restnotes ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ restnotes ---
+[INFO] Copying 2 resources from src/test/resources to target/test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ restnotes ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ restnotes ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.scheideckerantunes.notes.DatabaseSafetyTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.187 s -- in com.scheideckerantunes.notes.DatabaseSafetyTest
+[INFO] Running com.scheideckerantunes.notes.NoteWriteAccessTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.895 s -- in com.scheideckerantunes.notes.NoteWriteAccessTest
+[INFO] Running com.scheideckerantunes.notes.NoteLockRulesTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.042 s -- in com.scheideckerantunes.notes.NoteLockRulesTest
+[INFO] Running com.scheideckerantunes.notes.NotebookPolicyTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.052 s -- in com.scheideckerantunes.notes.NotebookPolicyTest
+[INFO] Running com.scheideckerantunes.notes.DomainModelTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in com.scheideckerantunes.notes.DomainModelTest
+[INFO] Running com.scheideckerantunes.notes.config.JwtConfigurationTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.493 s -- in com.scheideckerantunes.notes.config.JwtConfigurationTest
+[INFO] Running com.scheideckerantunes.notes.TagRulesTest
+17:19:33.267 [main] INFO org.hibernate.validator.internal.util.Version -- HV000001: Hibernate Validator 9.1.3.Final
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.135 s -- in com.scheideckerantunes.notes.TagRulesTest
+[INFO] Running com.scheideckerantunes.notes.AuthenticationValidationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.024 s -- in com.scheideckerantunes.notes.AuthenticationValidationTest
+[INFO] Running com.scheideckerantunes.notes.TeamServiceTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.081 s -- in com.scheideckerantunes.notes.TeamServiceTest
+[INFO] Running com.scheideckerantunes.notes.NoteRulesTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.154 s -- in com.scheideckerantunes.notes.NoteRulesTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 52, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.5.1:jar (default-jar) @ restnotes ---
+[INFO] Building jar: /home/antunes/RestNotes/API/target/restnotes.jar
+[INFO] 
+[INFO] --- spring-boot:4.1.1:repackage (repackage) @ restnotes ---
+[INFO] Replacing main artifact /home/antunes/RestNotes/API/target/restnotes.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /home/antunes/RestNotes/API/target/restnotes.jar.original
+[INFO] 
+[INFO] --- failsafe:3.5.6:integration-test (default) @ restnotes ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.scheideckerantunes.notes.FoundationIT
+17:19:34.801 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.scheideckerantunes.notes.FoundationIT]: FoundationIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:19:34.895 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.FoundationIT
+17:19:34.944 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.scheideckerantunes.notes.FoundationIT]: FoundationIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:19:34.944 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:19:34.945 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.FoundationIT
+17:19:34.975 [main] INFO org.testcontainers.images.PullPolicy -- Image pull policy will be performed by: DefaultPullPolicy()
+17:19:34.976 [main] INFO org.testcontainers.utility.ImageNameSubstitutor -- Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+17:19:34.988 [main] INFO org.testcontainers.DockerClientFactory -- Testcontainers version: 2.0.5
+17:19:35.084 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Loaded org.testcontainers.dockerclient.UnixSocketClientProviderStrategy from ~/.testcontainers.properties, will try it first
+17:19:35.380 [main] INFO org.testcontainers.dockerclient.DockerClientProviderStrategy -- Found Docker environment with local Unix socket (unix:///var/run/docker.sock)
+17:19:35.381 [main] INFO org.testcontainers.DockerClientFactory -- Docker host IP address is localhost
+17:19:35.395 [main] INFO org.testcontainers.DockerClientFactory -- Connected to docker: 
+  Server Version: 29.1.3
+  API Version: 1.52
+  Operating System: Ubuntu 26.04.1 LTS
+  Total Memory: 62215 MB
+17:19:35.414 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Creating container for image: testcontainers/ryuk:0.14.0
+17:19:35.417 [main] INFO org.testcontainers.utility.RegistryAuthLocator -- Failure when attempting to lookup auth config. Please ignore if you don't have images in an authenticated registry. Details: (dockerImageName: testcontainers/ryuk:0.14.0, configFile: /home/antunes/.docker/config.json, configEnv: DOCKER_AUTH_CONFIG). Falling back to docker-java default behaviour. Exception message: Status 404: No config supplied. Checked in order: /home/antunes/.docker/config.json (file not found), DOCKER_AUTH_CONFIG (not set)
+17:19:35.487 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 is starting: 65341fa4d1cb79eeeb0cb85b0e691c1e372f9ed8b2349b2113343c40c67b1238
+17:19:35.736 [main] INFO tc.testcontainers/ryuk:0.14.0 -- Container testcontainers/ryuk:0.14.0 started in PT0.322248002S
+17:19:35.740 [main] INFO org.testcontainers.utility.RyukResourceReaper -- Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+17:19:35.740 [main] INFO org.testcontainers.DockerClientFactory -- Checking the system...
+17:19:35.740 [main] INFO org.testcontainers.DockerClientFactory -- ✔︎ Docker server version should be at least 1.6.0
+17:19:35.745 [main] INFO tc.mysql:8.4.11@sha256:249891... -- Creating container for image: mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70
+17:19:35.764 [main] INFO tc.mysql:8.4.11@sha256:249891... -- Container mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70 is starting: 81502c5e87621ec3c87d84eddcf5c762201292bb4fd515ca163d987a0ea3b20c
+17:19:35.861 [main] INFO tc.mysql:8.4.11@sha256:249891... -- Waiting for database connection to become available at jdbc:mysql://localhost:32871/RestNotes using query 'SELECT 1'
+17:19:41.084 [main] INFO tc.mysql:8.4.11@sha256:249891... -- Container mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70 started in PT5.338796749S
+17:19:41.084 [main] INFO tc.mysql:8.4.11@sha256:249891... -- Container is started (JDBC URL: jdbc:mysql://localhost:32871/RestNotes)
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-17T17:19:41.311-06:00  INFO 1436624 --- [RestNotes] [           main] c.scheideckerantunes.notes.FoundationIT  : Starting FoundationIT using Java 25.0.4.1 with PID 1436624 (started by antunes in /home/antunes/RestNotes/API)
+2026-10-17T17:19:41.312-06:00  INFO 1436624 --- [RestNotes] [           main] c.scheideckerantunes.notes.FoundationIT  : The following 1 profile is active: "test"
+2026-10-17T17:19:42.031-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-17T17:19:42.085-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 48 ms. Found 11 JPA repository interfaces.
+2026-10-17T17:19:42.544-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-10-17T17:19:42.558-06:00  INFO 1436624 --- [RestNotes] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-10-17T17:19:42.559-06:00  INFO 1436624 --- [RestNotes] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-10-17T17:19:42.596-06:00  INFO 1436624 --- [RestNotes] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1271 ms
+2026-10-17T17:19:42.867-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-17T17:19:42.964-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@16c1345b
+2026-10-17T17:19:42.965-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-17T17:19:43.214-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Creating database changelog table with name: RestNotes.DATABASECHANGELOG
+2026-10-17T17:19:43.287-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:19:43.307-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.snapshot                       : Creating snapshot
+2026-10-17T17:19:43.332-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Integer display width is deprecated and will be removed in a future release.
+2026-10-17T17:19:43.362-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.lockservice                    : Successfully acquired change log lock
+2026-10-17T17:19:43.362-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.command                        : Using deploymentId: 2279182856
+2026-10-17T17:19:43.364-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:19:43.383-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Running Changeset: db/changelog/schema.yml::001-create-restnotes-schema::Carlos Scheidecker
+2026-10-17T17:19:43.429-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : 'BINARY expr' is deprecated and will be removed in a future release. Please use CAST instead
+2026-10-17T17:19:43.429-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : 'BINARY expr' is deprecated and will be removed in a future release. Please use CAST instead
+2026-10-17T17:19:43.492-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : 'BINARY expr' is deprecated and will be removed in a future release. Please use CAST instead
+2026-10-17T17:19:43.492-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : 'BINARY expr' is deprecated and will be removed in a future release. Please use CAST instead
+2026-10-17T17:19:43.545-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : SQL in file sql/001-schema.sql executed
+2026-10-17T17:19:43.546-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : ChangeSet db/changelog/schema.yml::001-create-restnotes-schema::Carlos Scheidecker ran successfully in 161ms
+2026-10-17T17:19:43.552-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Running Changeset: db/changelog/schema.yml::002-note-fulltext-index::Carlos Scheidecker
+2026-10-17T17:19:43.629-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : InnoDB rebuilding table to add column FTS_DOC_ID
+2026-10-17T17:19:43.630-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Custom SQL executed
+2026-10-17T17:19:43.630-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : ChangeSet db/changelog/schema.yml::002-note-fulltext-index::Carlos Scheidecker ran successfully in 78ms
+2026-10-17T17:19:43.635-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Running Changeset: db/changelog/schema.yml::004-notebook-sharing::Carlos Scheidecker
+2026-10-17T17:19:43.679-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : SQL in file sql/004-notebook-sharing.sql executed
+2026-10-17T17:19:43.679-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : ChangeSet db/changelog/schema.yml::004-notebook-sharing::Carlos Scheidecker ran successfully in 44ms
+2026-10-17T17:19:43.684-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Running Changeset: db/changelog/schema.yml::005-note-locks::Carlos Scheidecker
+2026-10-17T17:19:43.712-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : SQL in file sql/005-note-locks.sql executed
+2026-10-17T17:19:43.712-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : ChangeSet db/changelog/schema.yml::005-note-locks::Carlos Scheidecker ran successfully in 27ms
+2026-10-17T17:19:43.721-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.command                        : Update command completed successfully.
+2026-10-17T17:19:43.721-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Liquibase: Update has been successful. Rows affected: 0
+2026-10-17T17:19:43.725-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.lockservice                    : Successfully released change log lock
+2026-10-17T17:19:43.726-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.command                        : Command execution complete
+2026-10-17T17:19:43.777-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-17T17:19:43.807-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.5.Final
+2026-10-17T17:19:44.022-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-17T17:19:44.065-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:32871/RestNotes]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.4.11
+	Default catalog/schema: RestNotes/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-17T17:19:44.077-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.195-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.195-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.195-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.195-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.196-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.197-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.198-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.198-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.198-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.198-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.198-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.198-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.200-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.200-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.200-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.200-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.201-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.201-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.201-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.215-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:44.669-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-17T17:19:44.704-06:00  INFO 1436624 --- [RestNotes] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-17T17:19:44.757-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-10-17T17:19:46.337-06:00  INFO 1436624 --- [RestNotes] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-17T17:19:46.786-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-10-17T17:19:46.831-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 33891 (http) with context path '/'
+2026-10-17T17:19:46.839-06:00  INFO 1436624 --- [RestNotes] [           main] c.scheideckerantunes.notes.FoundationIT  : Started FoundationIT in 5.737 seconds (process running for 12.698)
+2026-10-17T17:19:47.225-06:00  INFO 1436624 --- [RestNotes] [o-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-10-17T17:19:47.226-06:00  INFO 1436624 --- [RestNotes] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-10-17T17:19:47.227-06:00  INFO 1436624 --- [RestNotes] [o-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-10-17T17:19:47.814-06:00  INFO 1436624 --- [RestNotes] [o-auto-1-exec-4] o.springdoc.api.AbstractOpenApiResource  : Init duration for springdoc-openapi is: 419 ms
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.20 s -- in com.scheideckerantunes.notes.FoundationIT
+[INFO] Running com.scheideckerantunes.notes.PersistenceIT
+2026-10-17T17:19:47.873-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.PersistenceIT]: PersistenceIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:47.874-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.PersistenceIT
+2026-10-17T17:19:47.875-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.PersistenceIT]: PersistenceIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:47.875-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:47.876-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.PersistenceIT
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-17T17:19:47.912-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.PersistenceIT                  : Starting PersistenceIT using Java 25.0.4.1 with PID 1436624 (started by antunes in /home/antunes/RestNotes/API)
+2026-10-17T17:19:47.912-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.PersistenceIT                  : The following 1 profile is active: "test"
+2026-10-17T17:19:48.057-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-17T17:19:48.067-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 8 ms. Found 11 JPA repository interfaces.
+2026-10-17T17:19:48.120-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-10-17T17:19:48.130-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@59de6c1f
+2026-10-17T17:19:48.131-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-10-17T17:19:48.178-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:19:48.201-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.lockservice                    : Successfully acquired change log lock
+2026-10-17T17:19:48.202-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.command                        : Using deploymentId: 2279182856
+2026-10-17T17:19:48.203-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:19:48.208-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Running Changeset: db/changelog/demo.yml::003-development-demo-data::Carlos Scheidecker
+2026-10-17T17:19:48.233-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : SQL in file sql/003-demo.sql executed
+2026-10-17T17:19:48.234-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : ChangeSet db/changelog/demo.yml::003-development-demo-data::Carlos Scheidecker ran successfully in 26ms
+2026-10-17T17:19:48.238-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.command                        : Update command completed successfully.
+2026-10-17T17:19:48.238-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Liquibase: Update has been successful. Rows affected: 14
+2026-10-17T17:19:48.240-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.lockservice                    : Successfully released change log lock
+2026-10-17T17:19:48.240-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.command                        : Command execution complete
+2026-10-17T17:19:48.252-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-17T17:19:48.263-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-17T17:19:48.266-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:32871/RestNotes]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.4.11
+	Default catalog/schema: RestNotes/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-17T17:19:48.267-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.295-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.295-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.295-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.295-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.295-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.296-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.296-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.296-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.296-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.296-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.296-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.296-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.297-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.297-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.297-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.297-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.298-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.298-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.298-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.301-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:48.344-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-17T17:19:48.353-06:00  INFO 1436624 --- [RestNotes] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-17T17:19:48.527-06:00  INFO 1436624 --- [RestNotes] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-17T17:19:48.634-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-10-17T17:19:48.642-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.PersistenceIT                  : Started PersistenceIT in 0.755 seconds (process running for 14.501)
+2026-10-17T17:19:48.763-06:00  WARN 1436624 --- [RestNotes] [           main] org.hibernate.orm.jdbc.error             : HHH000247: ErrorCode: 1062, SQLState: 23000
+2026-10-17T17:19:48.763-06:00  WARN 1436624 --- [RestNotes] [           main] org.hibernate.orm.jdbc.error             : Duplicate entry ' \x00\x00\x00\x00\x00@\x00\x80\x00\x00\x00\x00\x00\x00\x01-desig' for key 'tags.uq_tag_name'
+2026-10-17T17:19:48.773-06:00  WARN 1436624 --- [RestNotes] [           main] org.hibernate.orm.jdbc.error             : HHH000247: ErrorCode: 1062, SQLState: 23000
+2026-10-17T17:19:48.773-06:00  WARN 1436624 --- [RestNotes] [           main] org.hibernate.orm.jdbc.error             : Duplicate entry 'engineering.admin@scheideckerantunes.com' for key 'users.uq_users_email'
+2026-10-17T17:19:48.982-06:00  WARN 1436624 --- [RestNotes] [           main] org.hibernate.orm.jdbc.error             : HHH000247: ErrorCode: 1452, SQLState: 23000
+2026-10-17T17:19:48.982-06:00  WARN 1436624 --- [RestNotes] [           main] org.hibernate.orm.jdbc.error             : Cannot add or update a child row: a foreign key constraint fails (`RestNotes`.`notes`, CONSTRAINT `fk_note_notebook_team` FOREIGN KEY (`notebook_id`, `team_id`) REFERENCES `notebooks` (`id`, `team_id`) ON DELETE RESTRICT)
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.218 s -- in com.scheideckerantunes.notes.PersistenceIT
+[INFO] Running com.scheideckerantunes.notes.NoteLockingIT
+2026-10-17T17:19:49.092-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NoteLockingIT]: NoteLockingIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:49.096-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NoteLockingIT
+2026-10-17T17:19:49.097-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NoteLockingIT]: NoteLockingIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:49.097-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:49.098-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NoteLockingIT
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-17T17:19:49.112-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.NoteLockingIT                  : Starting NoteLockingIT using Java 25.0.4.1 with PID 1436624 (started by antunes in /home/antunes/RestNotes/API)
+2026-10-17T17:19:49.112-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.NoteLockingIT                  : The following 1 profile is active: "test"
+2026-10-17T17:19:49.231-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-17T17:19:49.240-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 8 ms. Found 11 JPA repository interfaces.
+2026-10-17T17:19:49.302-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Starting...
+2026-10-17T17:19:49.317-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-3 - Added connection com.mysql.cj.jdbc.ConnectionImpl@33b151cf
+2026-10-17T17:19:49.317-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-3 - Start completed.
+2026-10-17T17:19:49.359-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:19:49.371-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Database is up to date, no changesets to execute
+2026-10-17T17:19:49.372-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:19:49.375-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.command                        : Command execution complete
+2026-10-17T17:19:49.388-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-17T17:19:49.399-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-17T17:19:49.402-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:32871/RestNotes]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.4.11
+	Default catalog/schema: RestNotes/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-17T17:19:49.402-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.429-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.429-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.429-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.429-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.429-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.429-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.429-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.430-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.432-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:49.467-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-17T17:19:49.474-06:00  INFO 1436624 --- [RestNotes] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-17T17:19:49.592-06:00  INFO 1436624 --- [RestNotes] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-17T17:19:49.697-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-17T17:19:49.698-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-17T17:19:49.699-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-10-17T17:19:49.701-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 3 ms
+2026-10-17T17:19:49.718-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.NoteLockingIT                  : Started NoteLockingIT in 0.616 seconds (process running for 15.577)
+[INFO] Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.375 s -- in com.scheideckerantunes.notes.NoteLockingIT
+[INFO] Running com.scheideckerantunes.notes.NotebookSharingIT
+2026-10-17T17:19:51.467-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NotebookSharingIT]: NotebookSharingIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:51.469-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NotebookSharingIT
+2026-10-17T17:19:51.469-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NotebookSharingIT]: NotebookSharingIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:51.469-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:51.470-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NotebookSharingIT
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.856 s -- in com.scheideckerantunes.notes.NotebookSharingIT
+[INFO] Running com.scheideckerantunes.notes.AuthenticationIT
+2026-10-17T17:19:52.324-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.AuthenticationIT]: AuthenticationIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:52.325-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.AuthenticationIT
+2026-10-17T17:19:52.326-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.AuthenticationIT]: AuthenticationIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:52.326-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:52.327-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.AuthenticationIT
+2026-10-17T17:19:52.412-06:00  WARN 1436624 --- [RestNotes] [pool-3-thread-1] org.hibernate.orm.jdbc.error             : HHH000247: ErrorCode: 1062, SQLState: 23000
+2026-10-17T17:19:52.412-06:00  WARN 1436624 --- [RestNotes] [pool-3-thread-1] org.hibernate.orm.jdbc.error             : Duplicate entry '979fad18-7a6c-427d-9615-fe5df1ddb70c@scheideckerantunes.com' for key 'users.uq_users_email'
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.878 s -- in com.scheideckerantunes.notes.AuthenticationIT
+[INFO] Running com.scheideckerantunes.notes.TeamConcurrencyIT
+2026-10-17T17:19:53.202-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.TeamConcurrencyIT]: TeamConcurrencyIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:53.203-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.TeamConcurrencyIT
+2026-10-17T17:19:53.203-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.TeamConcurrencyIT]: TeamConcurrencyIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:53.203-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:53.204-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.TeamConcurrencyIT
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.098 s -- in com.scheideckerantunes.notes.TeamConcurrencyIT
+[INFO] Running com.scheideckerantunes.notes.MigrationLifecycleIT
+2026-10-17T17:19:53.301-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Creating container for image: mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70
+2026-10-17T17:19:53.313-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Container mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70 is starting: 9fe6d8b601038d87bbd618f2d05daddb9d0fe06c1af4d3cdec7b44255d0d6218
+2026-10-17T17:19:53.412-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Waiting for database connection to become available at jdbc:mysql://localhost:32872/RestNotes using query 'SELECT 1'
+2026-10-17T17:19:58.580-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Container mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70 started in PT5.279151508S
+2026-10-17T17:19:58.581-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Container is started (JDBC URL: jdbc:mysql://localhost:32872/RestNotes)
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.123 s -- in com.scheideckerantunes.notes.MigrationLifecycleIT
+[INFO] Running com.scheideckerantunes.notes.NotebookConcurrencyIT
+2026-10-17T17:19:59.426-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NotebookConcurrencyIT]: NotebookConcurrencyIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:59.426-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NotebookConcurrencyIT
+2026-10-17T17:19:59.427-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NotebookConcurrencyIT]: NotebookConcurrencyIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:59.427-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:59.427-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NotebookConcurrencyIT
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.186 s -- in com.scheideckerantunes.notes.NotebookConcurrencyIT
+[INFO] Running com.scheideckerantunes.notes.FoundationWebIT
+2026-10-17T17:19:59.613-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.FoundationWebIT]: FoundationWebIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:59.614-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.FoundationWebIT
+2026-10-17T17:19:59.615-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.FoundationWebIT]: FoundationWebIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:59.615-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:19:59.616-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.FoundationWebIT
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-17T17:19:59.628-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.FoundationWebIT                : Starting FoundationWebIT using Java 25.0.4.1 with PID 1436624 (started by antunes in /home/antunes/RestNotes/API)
+2026-10-17T17:19:59.628-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.FoundationWebIT                : The following 1 profile is active: "test"
+2026-10-17T17:19:59.735-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-17T17:19:59.744-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 7 ms. Found 11 JPA repository interfaces.
+2026-10-17T17:19:59.784-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Starting...
+2026-10-17T17:19:59.791-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-4 - Added connection com.mysql.cj.jdbc.ConnectionImpl@73b5f456
+2026-10-17T17:19:59.791-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-4 - Start completed.
+2026-10-17T17:19:59.810-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:19:59.815-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Database is up to date, no changesets to execute
+2026-10-17T17:19:59.816-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:19:59.818-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.command                        : Command execution complete
+2026-10-17T17:19:59.826-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-17T17:19:59.836-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-17T17:19:59.838-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:32871/RestNotes]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.4.11
+	Default catalog/schema: RestNotes/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-17T17:19:59.838-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.859-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.860-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.860-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.860-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.860-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.860-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.860-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.860-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.861-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.861-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.861-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.861-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.861-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.861-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.861-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.861-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.862-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.862-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.862-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.864-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:19:59.895-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-17T17:19:59.901-06:00  INFO 1436624 --- [RestNotes] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-17T17:20:00.016-06:00  INFO 1436624 --- [RestNotes] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-17T17:20:00.097-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-17T17:20:00.098-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-17T17:20:00.099-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-10-17T17:20:00.101-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 3 ms
+2026-10-17T17:20:00.113-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.FoundationWebIT                : Started FoundationWebIT in 0.495 seconds (process running for 25.972)
+2026-10-17T17:20:00.299-06:00  INFO 1436624 --- [RestNotes] [           main] o.springdoc.api.AbstractOpenApiResource  : Init duration for springdoc-openapi is: 144 ms
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.740 s -- in com.scheideckerantunes.notes.FoundationWebIT
+[INFO] Running com.scheideckerantunes.notes.NoteConcurrencyIT
+2026-10-17T17:20:00.353-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NoteConcurrencyIT]: NoteConcurrencyIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:00.354-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NoteConcurrencyIT
+2026-10-17T17:20:00.355-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NoteConcurrencyIT]: NoteConcurrencyIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:00.355-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:00.355-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NoteConcurrencyIT
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.203 s -- in com.scheideckerantunes.notes.NoteConcurrencyIT
+[INFO] Running com.scheideckerantunes.notes.NotebookMigrationUpgradeIT
+2026-10-17T17:20:01.556-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Creating container for image: mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70
+2026-10-17T17:20:01.569-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Container mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70 is starting: f8713f221dc616f37224c12156384d7bb7522a53339093acba68d52b95588978
+2026-10-17T17:20:01.669-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Waiting for database connection to become available at jdbc:mysql://localhost:32873/RestNotes using query 'SELECT 1'
+2026-10-17T17:20:07.559-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Container mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70 started in PT6.00265985S
+2026-10-17T17:20:07.559-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Container is started (JDBC URL: jdbc:mysql://localhost:32873/RestNotes)
+2026-10-17T17:20:08.251-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Creating container for image: mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70
+2026-10-17T17:20:08.264-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Container mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70 is starting: fe305a378a410315814dee9d070cddc766a255cdb9350b3bccc06708ee9db042
+2026-10-17T17:20:08.362-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Waiting for database connection to become available at jdbc:mysql://localhost:32874/RestNotes using query 'SELECT 1'
+2026-10-17T17:20:14.345-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Container mysql:8.4.11@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70 started in PT6.094101299S
+2026-10-17T17:20:14.345-06:00  INFO 1436624 --- [RestNotes] [           main] tc.mysql:8.4.11@sha256:249891...         : Container is started (JDBC URL: jdbc:mysql://localhost:32874/RestNotes)
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 13.47 s -- in com.scheideckerantunes.notes.NotebookMigrationUpgradeIT
+[INFO] Running com.scheideckerantunes.notes.ProductionSurfaceIT
+2026-10-17T17:20:15.026-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.ProductionSurfaceIT]: ProductionSurfaceIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:15.027-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.ProductionSurfaceIT
+2026-10-17T17:20:15.027-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.ProductionSurfaceIT]: ProductionSurfaceIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:15.027-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:15.028-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.ProductionSurfaceIT
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-17T17:20:15.040-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.ProductionSurfaceIT            : Starting ProductionSurfaceIT using Java 25.0.4.1 with PID 1436624 (started by antunes in /home/antunes/RestNotes/API)
+2026-10-17T17:20:15.040-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.ProductionSurfaceIT            : The following 2 profiles are active: "dev", "prod"
+2026-10-17T17:20:15.129-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-17T17:20:15.137-06:00  INFO 1436624 --- [RestNotes] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 7 ms. Found 11 JPA repository interfaces.
+2026-10-17T17:20:15.184-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Starting...
+2026-10-17T17:20:15.200-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-5 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1c2595c5
+2026-10-17T17:20:15.200-06:00  INFO 1436624 --- [RestNotes] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-5 - Start completed.
+2026-10-17T17:20:15.225-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:20:15.230-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.ui                             : Database is up to date, no changesets to execute
+2026-10-17T17:20:15.231-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.changelog                      : Reading from RestNotes.DATABASECHANGELOG
+2026-10-17T17:20:15.232-06:00  INFO 1436624 --- [RestNotes] [           main] liquibase.command                        : Command execution complete
+2026-10-17T17:20:15.242-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-17T17:20:15.251-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-17T17:20:15.252-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:32871/RestNotes]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.4.11
+	Default catalog/schema: RestNotes/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-17T17:20:15.253-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.273-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.274-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.274-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.274-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.274-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.274-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.274-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.276-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-17T17:20:15.304-06:00  INFO 1436624 --- [RestNotes] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-17T17:20:15.309-06:00  INFO 1436624 --- [RestNotes] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-17T17:20:15.403-06:00  INFO 1436624 --- [RestNotes] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-10-17T17:20:15.464-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-17T17:20:15.464-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-17T17:20:15.465-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-10-17T17:20:15.467-06:00  INFO 1436624 --- [RestNotes] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 3 ms
+2026-10-17T17:20:15.478-06:00  INFO 1436624 --- [RestNotes] [           main] c.s.notes.ProductionSurfaceIT            : Started ProductionSurfaceIT in 0.448 seconds (process running for 41.337)
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.479 s -- in com.scheideckerantunes.notes.ProductionSurfaceIT
+[INFO] Running com.scheideckerantunes.notes.NoteCrudIT
+2026-10-17T17:20:15.505-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NoteCrudIT]: NoteCrudIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:15.506-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NoteCrudIT
+2026-10-17T17:20:15.507-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.NoteCrudIT]: NoteCrudIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:15.507-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:15.507-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.NoteCrudIT
+[INFO] Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.731 s -- in com.scheideckerantunes.notes.NoteCrudIT
+[INFO] Running com.scheideckerantunes.notes.TeamAdministrationIT
+2026-10-17T17:20:16.237-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.TeamAdministrationIT]: TeamAdministrationIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:16.239-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.TeamAdministrationIT
+2026-10-17T17:20:16.239-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.TeamAdministrationIT]: TeamAdministrationIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:16.239-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:16.240-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.TeamAdministrationIT
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.312 s -- in com.scheideckerantunes.notes.TeamAdministrationIT
+[INFO] Running com.scheideckerantunes.notes.TagManagementIT
+2026-10-17T17:20:16.550-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.TagManagementIT]: TagManagementIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:16.551-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.TagManagementIT
+2026-10-17T17:20:16.551-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.TagManagementIT]: TagManagementIT does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:16.551-06:00  INFO 1436624 --- [RestNotes] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.scheideckerantunes.notes.MySqlIntegrationSupport]: MySqlIntegrationSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-17T17:20:16.552-06:00  INFO 1436624 --- [RestNotes] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.scheideckerantunes.notes.RestNotesApplication for test class com.scheideckerantunes.notes.TagManagementIT
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.841 s -- in com.scheideckerantunes.notes.TagManagementIT
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 132, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- failsafe:3.5.6:verify (default) @ restnotes ---
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  48.856 s
+[INFO] Finished at: 2026-10-17T17:20:17-06:00
+[INFO] ------------------------------------------------------------------------

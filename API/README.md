@@ -216,6 +216,7 @@ Each sample note has an initial history snapshot and activity entry. Demo change
 - [Database schema reference](docs/Database-Schema-Reference.md)
 - [Quick start](docs/Quick_start.md)
 - [CURL guide for currently implemented operations](docs/CURL_Guide.md)
+- [Executable CURL walkthrough](../Scripts/curl-sample.sh) — named requests, sanitized results and expected-status checks; creates retained demonstration fixtures.
 - [Implementation phases](docs/implementation-phases.md)
 
 PlantUML component, class and sequence sources plus rendered SVGs are available under `docs/diagrams/`, embedded and explained in the [architecture document](docs/architecture.md). The cloud guides are reviewed runbooks/templates, not evidence of a live tested deployment; executing them requires separate approval and a staging rehearsal. Remaining planned manuals: `Step-by-step-usage-manual.md` and `SYSTEM_MANUAL.md` under docs/.

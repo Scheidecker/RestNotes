@@ -11,6 +11,20 @@ Run the sections in order: onboarding → teams → notebooks/sharing → note C
 Note CRUD/tag examples initially assume no active lease. If another client has already locked a note, follow [note locking](#note-locking) rather than retrying tokenless writes. Do not capture terminal sessions containing private note responses, enable curl verbose/trace output, or save bearer/lock tokens in `.env` or source files.
 
 ## Register, login and read your profile
+Before copying individual examples, you can alternatively run the complete ordered walkthrough using [Scripts/curl-sample.sh](../../Scripts/curl-sample.sh). From the API directory:
+
+```bash
+../Scripts/curl-sample.sh --help
+../Scripts/curl-sample.sh --demo --yes
+```
+
+The script requires Bash 4+, curl and Python 3, plus a dev/test API with registration/OpenAPI enabled and the seeded Marketing account/team. `--demo` explicitly permits the public local-demo recipient password and is restricted to loopback targets; omit it to securely prompt for the current recipient password or supply RN_SAMPLE_RECIPIENT_PASSWORD through the process environment. Use `--base-url http://127.0.0.1:18081` for a different local API port.
+
+Each named request prints its sanitized curl command shape, request JSON, expected/actual status and response. Expected failures (401/403/404/409/412/423/428) count as successful demonstrations; an unexpected status/transport failure stops execution without automatically retrying writes. Bearer/lease tokens and passwords are redacted; large OpenAPI/HTML responses are previewed unless `--full-output` is selected. This is terminal output, not screenshot-image capture.
+
+Every run creates a uniquely named owner account, a new team, two notebooks and two synthetic notes; the first notebook/note are archived in sequence, while the tag/lock playground remains for inspection. Existing seed notes and recipient-team memberships are not changed. It temporarily adds/removes the recipient only in the newly created owner team and shares the new active notebook with the recipient team. Records are intentionally retained because account/team hard-delete endpoints do not exist.
+
+Set RN_SAMPLE_EMAIL to an unused address and RN_SAMPLE_PASSWORD securely if you want to log in as that owner afterward. Otherwise the script generates a throwaway owner password and never displays/persists it. Do not run against production, enable tracing or put real credentials in command-line literals. Review the script's help for recipient/team overrides and noninteractive execution; protect output containing profile/member metadata and synthetic note responses.
 ### 1. Register an account — POST /api/v1/auth/register
 Registration is enabled by default in dev/test, disabled by default in UAT/prod. Pick an email not already registered. Passwords must have 12–72 characters and at most 72 UTF-8 bytes; they are not trimmed.
 

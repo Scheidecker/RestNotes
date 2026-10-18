@@ -1,0 +1,532 @@
+This creates demonstration records at http://localhost:8081; it is intended for dev/test.
+
+RestNotes CURL guide demonstration — Author: Carlos Scheidecker
+Target: http://localhost:8081
+New owner: curl.sample.edf509b0d4f741a781a759d88727e542@scheideckerantunes.com
+Only generated fixture notes are displayed. Passwords and tokens are never printed.
+
+================================================================
+[01] Register a fresh owner account
+POST http://localhost:8081/api/v1/auth/register
+Expected HTTP: 201
+curl --request POST http://localhost:8081/api/v1/auth/register --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "email": "curl.sample.edf509b0d4f741a781a759d88727e542@scheideckerantunes.com",
+  "password": "[REDACTED]",
+  "fullName": "CURL sample owner"
+}
+Result HTTP: 201
+Location: /api/v1/users/me
+Response (sanitized):
+{
+  "id": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "email": "curl.sample.edf509b0d4f741a781a759d88727e542@scheideckerantunes.com",
+  "fullName": "CURL sample owner",
+  "createdAt": "2026-10-18T00:45:31.024412Z"
+}
+PASS
+
+================================================================
+[02] Log in as the new owner
+POST http://localhost:8081/api/v1/auth/login
+Expected HTTP: 200
+curl --request POST http://localhost:8081/api/v1/auth/login --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "email": "curl.sample.edf509b0d4f741a781a759d88727e542@scheideckerantunes.com",
+  "password": "[REDACTED]"
+}
+Result HTTP: 200
+Response (sanitized):
+{
+  "accessToken": "[REDACTED]",
+  "tokenType": "Bearer",
+  "expiresIn": 900,
+  "expiresAt": "2026-10-18T01:00:31.178357266Z"
+}
+PASS
+
+================================================================
+[03] Read current owner profile
+GET http://localhost:8081/api/v1/users/me
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/users/me --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+Response (sanitized):
+{
+  "id": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "email": "curl.sample.edf509b0d4f741a781a759d88727e542@scheideckerantunes.com",
+  "fullName": "CURL sample owner",
+  "createdAt": "2026-10-18T00:45:31.024412Z"
+}
+PASS
+
+================================================================
+[04] List owner affiliations (initially empty)
+GET http://localhost:8081/api/v1/users/me/teams?page=0&size=20
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/users/me/teams\?page=0\&size=20 --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+Response (sanitized):
+{
+  "items": [],
+  "page": 0,
+  "size": 20,
+  "totalElements": 0,
+  "totalPages": 0
+}
+PASS
+
+================================================================
+[05] Reject anonymous profile access
+GET http://localhost:8081/api/v1/users/me
+Expected HTTP: 401
+curl --request GET http://localhost:8081/api/v1/users/me
+Result HTTP: 401
+Response (sanitized):
+{
+  "detail": "Authentication is required or the bearer token is invalid",
+  "instance": "/api/v1/users/me",
+  "status": 401,
+  "title": "Unauthorized",
+  "correlationId": "curl-sample-5"
+}
+PASS
+
+================================================================
+[06] Deny sensitive Actuator endpoint to authenticated user
+GET http://localhost:8081/actuator/env
+Expected HTTP: 403
+curl --request GET http://localhost:8081/actuator/env --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 403
+Response (sanitized):
+{
+  "detail": "Access is denied",
+  "instance": "/actuator/env",
+  "status": 403,
+  "title": "Forbidden",
+  "correlationId": "curl-sample-6"
+}
+PASS
+
+================================================================
+[07] Create a team and become its ADMIN
+POST http://localhost:8081/api/v1/teams
+Expected HTTP: 201
+curl --request POST http://localhost:8081/api/v1/teams --header "Authorization: Bearer [REDACTED]" --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "name": "CURL Release Planning",
+  "description": "Disposable walkthrough fixtures"
+}
+Result HTTP: 201
+Location: /api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e
+Response (sanitized):
+{
+  "id": "6f507108-2dd5-4490-881c-61f3a500c95e",
+  "name": "CURL Release Planning",
+  "description": "Disposable walkthrough fixtures",
+  "createdAt": "2026-10-18T00:45:31.362630Z",
+  "role": "ADMIN"
+}
+PASS
+
+================================================================
+[08] Capture creator profile
+GET http://localhost:8081/api/v1/users/me
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/users/me --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+Response (sanitized):
+{
+  "id": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "email": "curl.sample.edf509b0d4f741a781a759d88727e542@scheideckerantunes.com",
+  "fullName": "CURL sample owner",
+  "createdAt": "2026-10-18T00:45:31.024412Z"
+}
+PASS
+
+================================================================
+[09] Discover current teams
+GET http://localhost:8081/api/v1/teams?page=0&size=20
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/teams\?page=0\&size=20 --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+Response (sanitized):
+{
+  "items": [
+    {
+      "id": "6f507108-2dd5-4490-881c-61f3a500c95e",
+      "name": "CURL Release Planning",
+      "description": "Disposable walkthrough fixtures",
+      "createdAt": "2026-10-18T00:45:31.362630Z",
+      "role": "ADMIN"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1
+}
+PASS
+
+================================================================
+[10] Read the new team
+GET http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+Response (sanitized):
+{
+  "id": "6f507108-2dd5-4490-881c-61f3a500c95e",
+  "name": "CURL Release Planning",
+  "description": "Disposable walkthrough fixtures",
+  "createdAt": "2026-10-18T00:45:31.362630Z",
+  "role": "ADMIN"
+}
+PASS
+
+================================================================
+[11] Add the existing recipient as VIEWER in the new team
+POST http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members
+Expected HTTP: 201
+curl --request POST http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members --header "Authorization: Bearer [REDACTED]" --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "email": "marketing.admin@scheideckerantunes.com",
+  "role": "VIEWER"
+}
+Result HTTP: 201
+Location: /api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/10000000-0000-4000-8000-000000000002
+Response (sanitized):
+{
+  "userId": "10000000-0000-4000-8000-000000000002",
+  "email": "marketing.admin@scheideckerantunes.com",
+  "fullName": "Marketing Admin",
+  "role": "VIEWER",
+  "joinedAt": "2026-10-18T00:45:31.601868Z"
+}
+PASS
+
+================================================================
+[12] List team members
+GET http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members?page=0&size=20
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members\?page=0\&size=20 --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+Response (sanitized):
+{
+  "items": [
+    {
+      "userId": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+      "email": "curl.sample.edf509b0d4f741a781a759d88727e542@scheideckerantunes.com",
+      "fullName": "CURL sample owner",
+      "role": "ADMIN",
+      "joinedAt": "2026-10-18T00:45:31.363618Z"
+    },
+    {
+      "userId": "10000000-0000-4000-8000-000000000002",
+      "email": "marketing.admin@scheideckerantunes.com",
+      "fullName": "Marketing Admin",
+      "role": "VIEWER",
+      "joinedAt": "2026-10-18T00:45:31.601868Z"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 2,
+  "totalPages": 1
+}
+PASS
+
+================================================================
+[13] Change recipient membership to EDITOR
+PATCH http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/10000000-0000-4000-8000-000000000002
+Expected HTTP: 200
+curl --request PATCH http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/10000000-0000-4000-8000-000000000002 --header "Authorization: Bearer [REDACTED]" --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "role": "EDITOR"
+}
+Result HTTP: 200
+Response (sanitized):
+{
+  "userId": "10000000-0000-4000-8000-000000000002",
+  "email": "marketing.admin@scheideckerantunes.com",
+  "fullName": "Marketing Admin",
+  "role": "EDITOR",
+  "joinedAt": "2026-10-18T00:45:31.601868Z"
+}
+PASS
+
+================================================================
+[14] Prevent demotion of the final ADMIN
+PATCH http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/4040d2ea-a17c-431d-9dc6-60e376f4b4e2
+Expected HTTP: 409
+curl --request PATCH http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/4040d2ea-a17c-431d-9dc6-60e376f4b4e2 --header "Authorization: Bearer [REDACTED]" --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "role": "VIEWER"
+}
+Result HTTP: 409
+Response (sanitized):
+{
+  "detail": "A team must retain at least one ADMIN",
+  "instance": "/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "status": 409,
+  "title": "Conflict",
+  "correlationId": "curl-sample-14",
+  "code": "LAST_TEAM_ADMIN"
+}
+PASS
+
+================================================================
+[15] Prevent removal of the final ADMIN
+DELETE http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/4040d2ea-a17c-431d-9dc6-60e376f4b4e2
+Expected HTTP: 409
+curl --request DELETE http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/4040d2ea-a17c-431d-9dc6-60e376f4b4e2 --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 409
+Response (sanitized):
+{
+  "detail": "A team must retain at least one ADMIN",
+  "instance": "/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "status": 409,
+  "title": "Conflict",
+  "correlationId": "curl-sample-15",
+  "code": "LAST_TEAM_ADMIN"
+}
+PASS
+
+================================================================
+[16] Remove the added membership
+DELETE http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/10000000-0000-4000-8000-000000000002
+Expected HTTP: 204
+curl --request DELETE http://localhost:8081/api/v1/teams/6f507108-2dd5-4490-881c-61f3a500c95e/members/10000000-0000-4000-8000-000000000002 --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 204
+Response (sanitized):
+(empty response body)
+PASS
+
+================================================================
+[17] Create release notebook
+POST http://localhost:8081/api/v1/notebooks
+Expected HTTP: 201
+curl --request POST http://localhost:8081/api/v1/notebooks --header "Authorization: Bearer [REDACTED]" --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "teamId": "6f507108-2dd5-4490-881c-61f3a500c95e",
+  "title": "Release notebook",
+  "description": "Cross-functional release planning"
+}
+Result HTTP: 201
+ETag: "d452b26f-3de0-4014-9c66-7f8771dc7bfe:0:4040d2ea-a17c-431d-9dc6-60e376f4b4e2:ADMIN"
+Location: /api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe
+Response (sanitized):
+{
+  "id": "d452b26f-3de0-4014-9c66-7f8771dc7bfe",
+  "teamId": "6f507108-2dd5-4490-881c-61f3a500c95e",
+  "title": "Release notebook",
+  "description": "Cross-functional release planning",
+  "createdBy": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "createdAt": "2026-10-18T00:45:31.917256Z",
+  "updatedAt": "2026-10-18T00:45:31.917256Z",
+  "version": 0,
+  "accessLevel": "ADMIN"
+}
+PASS
+
+================================================================
+[18] List visible notebooks filtered by owning team
+GET http://localhost:8081/api/v1/notebooks?page=0&size=20&teamId=6f507108-2dd5-4490-881c-61f3a500c95e
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/notebooks\?page=0\&size=20\&teamId=6f507108-2dd5-4490-881c-61f3a500c95e --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+Response (sanitized):
+{
+  "items": [
+    {
+      "id": "d452b26f-3de0-4014-9c66-7f8771dc7bfe",
+      "teamId": "6f507108-2dd5-4490-881c-61f3a500c95e",
+      "title": "Release notebook",
+      "description": "Cross-functional release planning",
+      "createdBy": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+      "createdAt": "2026-10-18T00:45:31.917256Z",
+      "updatedAt": "2026-10-18T00:45:31.917256Z",
+      "version": 0,
+      "accessLevel": "ADMIN"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1
+}
+PASS
+
+================================================================
+[19] Read notebook and capture ETag
+GET http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+ETag: "d452b26f-3de0-4014-9c66-7f8771dc7bfe:0:4040d2ea-a17c-431d-9dc6-60e376f4b4e2:ADMIN"
+Response (sanitized):
+{
+  "id": "d452b26f-3de0-4014-9c66-7f8771dc7bfe",
+  "teamId": "6f507108-2dd5-4490-881c-61f3a500c95e",
+  "title": "Release notebook",
+  "description": "Cross-functional release planning",
+  "createdBy": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "createdAt": "2026-10-18T00:45:31.917256Z",
+  "updatedAt": "2026-10-18T00:45:31.917256Z",
+  "version": 0,
+  "accessLevel": "ADMIN"
+}
+PASS
+
+================================================================
+[20] Update notebook metadata
+PATCH http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe
+Expected HTTP: 200
+curl --request PATCH http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe --header "Authorization: Bearer [REDACTED]" --header If-Match:\ \"d452b26f-3de0-4014-9c66-7f8771dc7bfe:0:4040d2ea-a17c-431d-9dc6-60e376f4b4e2:ADMIN\" --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "title": "Updated release notebook"
+}
+Result HTTP: 200
+ETag: "d452b26f-3de0-4014-9c66-7f8771dc7bfe:1:4040d2ea-a17c-431d-9dc6-60e376f4b4e2:ADMIN"
+Response (sanitized):
+{
+  "id": "d452b26f-3de0-4014-9c66-7f8771dc7bfe",
+  "teamId": "6f507108-2dd5-4490-881c-61f3a500c95e",
+  "title": "Updated release notebook",
+  "description": "Cross-functional release planning",
+  "createdBy": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "createdAt": "2026-10-18T00:45:31.917256Z",
+  "updatedAt": "2026-10-18T00:45:32.075073Z",
+  "version": 1,
+  "accessLevel": "ADMIN"
+}
+PASS
+
+================================================================
+[21] Refresh owner notebook ETag
+GET http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+ETag: "d452b26f-3de0-4014-9c66-7f8771dc7bfe:1:4040d2ea-a17c-431d-9dc6-60e376f4b4e2:ADMIN"
+Response (sanitized):
+{
+  "id": "d452b26f-3de0-4014-9c66-7f8771dc7bfe",
+  "teamId": "6f507108-2dd5-4490-881c-61f3a500c95e",
+  "title": "Updated release notebook",
+  "description": "Cross-functional release planning",
+  "createdBy": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "createdAt": "2026-10-18T00:45:31.917256Z",
+  "updatedAt": "2026-10-18T00:45:32.075073Z",
+  "version": 1,
+  "accessLevel": "ADMIN"
+}
+PASS
+
+================================================================
+[22] Reject a stale notebook update
+PATCH http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe
+Expected HTTP: 412
+curl --request PATCH http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe --header "Authorization: Bearer [REDACTED]" --header If-Match:\ \"d452b26f-3de0-4014-9c66-7f8771dc7bfe:0:4040d2ea-a17c-431d-9dc6-60e376f4b4e2:ADMIN\" --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "description": "Must not overwrite"
+}
+Result HTTP: 412
+Response (sanitized):
+{
+  "detail": "Notebook precondition failed; retrieve its current ETag",
+  "instance": "/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe",
+  "status": 412,
+  "title": "Precondition Failed",
+  "correlationId": "curl-sample-22",
+  "code": "STALE_IF_MATCH"
+}
+PASS
+
+================================================================
+[23] List grants (initially empty)
+GET http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe/permissions?page=0&size=20
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe/permissions\?page=0\&size=20 --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+Response (sanitized):
+{
+  "items": [],
+  "page": 0,
+  "size": 20,
+  "totalElements": 0,
+  "totalPages": 0
+}
+PASS
+
+================================================================
+[24] Grant recipient team EDITOR access
+PATCH http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe/permissions
+Expected HTTP: 200
+curl --request PATCH http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe/permissions --header "Authorization: Bearer [REDACTED]" --header If-Match:\ \"d452b26f-3de0-4014-9c66-7f8771dc7bfe:1:4040d2ea-a17c-431d-9dc6-60e376f4b4e2:ADMIN\" --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "teamId": "20000000-0000-4000-8000-000000000002",
+  "accessLevel": "EDITOR"
+}
+Result HTTP: 200
+ETag: "d452b26f-3de0-4014-9c66-7f8771dc7bfe:2:4040d2ea-a17c-431d-9dc6-60e376f4b4e2:ADMIN"
+Response (sanitized):
+{
+  "teamId": "20000000-0000-4000-8000-000000000002",
+  "teamName": "Marketing",
+  "accessLevel": "EDITOR",
+  "sharedAt": "2026-10-18T00:45:32.273246Z",
+  "updatedAt": "2026-10-18T00:45:32.273246Z"
+}
+PASS
+
+================================================================
+[25] Refresh owner notebook ETag
+GET http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe
+Expected HTTP: 200
+curl --request GET http://localhost:8081/api/v1/notebooks/d452b26f-3de0-4014-9c66-7f8771dc7bfe --header "Authorization: Bearer [REDACTED]"
+Result HTTP: 200
+ETag: "d452b26f-3de0-4014-9c66-7f8771dc7bfe:2:4040d2ea-a17c-431d-9dc6-60e376f4b4e2:ADMIN"
+Response (sanitized):
+{
+  "id": "d452b26f-3de0-4014-9c66-7f8771dc7bfe",
+  "teamId": "6f507108-2dd5-4490-881c-61f3a500c95e",
+  "title": "Updated release notebook",
+  "description": "Cross-functional release planning",
+  "createdBy": "4040d2ea-a17c-431d-9dc6-60e376f4b4e2",
+  "createdAt": "2026-10-18T00:45:31.917256Z",
+  "updatedAt": "2026-10-18T00:45:32.274112Z",
+  "version": 2,
+  "accessLevel": "ADMIN"
+}
+PASS
+
+================================================================
+[26] Log in as the existing recipient
+POST http://localhost:8081/api/v1/auth/login
+Expected HTTP: 200
+curl --request POST http://localhost:8081/api/v1/auth/login --header "Content-Type: application/json" --data-binary @-
+Request JSON (sanitized):
+{
+  "email": "marketing.admin@scheideckerantunes.com",
+  "password": "[REDACTED]"
+}
+Result HTTP: 401
+Response (sanitized):
+{
+  "detail": "Invalid credentials",
+  "instance": "/api/v1/auth/login",
+  "status": 401,
+  "title": "Unauthorized",
+  "correlationId": "curl-sample-26"
+}
